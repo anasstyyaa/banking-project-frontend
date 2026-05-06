@@ -1,7 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import AtmDashboardView from '@/views/AtmDashboardView.vue'
 import AtmLoginView from '@/views/AtmLoginView.vue'
-import ProfileView from '@/views/ProfileView.vue'
 import { useAuthStore } from '@/stores/authStore'
 
 const router = createRouter({
@@ -10,7 +9,6 @@ const router = createRouter({
     { path: '/', redirect: '/atm/login' },
     { path: '/atm/login', component: AtmLoginView },
     { path: '/atm', component: AtmDashboardView, meta: { requiresAuth: true } },
-    { path: '/profile', component: ProfileView, meta: { requiresAuth: true } },
   ],
 })
 
