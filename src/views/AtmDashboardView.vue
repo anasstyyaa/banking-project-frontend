@@ -27,7 +27,10 @@ async function logout() {
         <p class="label">Mock ATM</p>
         <h1>Deposit and withdraw</h1>
       </div>
-      <button type="button" class="secondary" @click="logout">Logout</button>
+      <div class="button-row">
+        <button type="button" class="secondary" @click="router.push('/profile')">Profile</button>
+        <button type="button" class="secondary" @click="logout">Logout</button>
+      </div>
     </header>
 
     <section class="grid">
