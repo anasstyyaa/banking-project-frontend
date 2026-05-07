@@ -5,6 +5,23 @@ export default {
   component: AppInput,
 };
 
-export const Text = { args: { placeholder: 'Enter IBAN...' } };
-export const Password = { args: { type: 'password', placeholder: '••••••••' } };
-export const ErrorState = { args: { error: true, modelValue: 'Invalid Amount' } };
+export const Default = {
+  args: {
+    placeholder: 'Enter IBAN...',
+    type: 'text',
+  },
+};
+
+export const Password = {
+  args: {
+    placeholder: 'Enter PIN',
+    type: 'password',
+  },
+};
+
+export const Error = {
+  args: {
+    modelValue: 'Invalid Amount',
+    error: true,
+  },
+};
