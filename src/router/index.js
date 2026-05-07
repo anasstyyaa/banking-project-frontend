@@ -1,9 +1,13 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import LoginPage from '@/components/pages/LoginPage.vue'
+import RegisterPage from '@/components/pages/RegisterPage.vue'
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
-    /* i will add login and register routes */
+    { path: '/', redirect: '/login' },
+    { path: '/login', component: LoginPage },
+    { path: '/register', component: RegisterPage }
   ],
 })
 

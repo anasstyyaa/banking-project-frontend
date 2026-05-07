@@ -5,5 +5,23 @@ export default {
   component: AppBadge,
 };
 
-export const Success = { args: { type: 'success', default: 'Completed' } };
-export const Warning = { args: { type: 'warning', default: 'Pending' } };
+export const Completed = {
+  args: {
+    type: 'success',
+    default: 'Completed',
+  },
+};
+
+export const Pending = {
+  args: {
+    type: 'warning',
+    default: 'Pending',
+  },
+};
+
+export const Rejected = {
+  args: {
+    type: 'error',
+    default: 'Rejected',
+  },
+};
