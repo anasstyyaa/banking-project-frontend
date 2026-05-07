@@ -66,7 +66,9 @@ const handleLogin = async () => {
     });
 
     const token = response.data.token;
-    localStorage.setItem('bank_token', token); 
+    localStorage.setItem('token', token);
+    localStorage.setItem('user_email', response.data.email);
+    localStorage.setItem('user_role', response.data.role);
 
     router.push('/dashboard');
   } catch (err) {
