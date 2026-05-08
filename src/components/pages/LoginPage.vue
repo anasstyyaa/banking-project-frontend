@@ -56,21 +56,24 @@ const errors = reactive({
   password: ''
 });
 
-
 const handleLogin = async () => {
+  errors.email = '';
+  errors.password = '';
+  
   isLoading.value = true;
   try {
-    const response = await api.post('/auth/login', {
-      email: loginData.email,
-      password: loginData.password
-    });
+    const response = await api.post('/auth/login', loginData);
 
-    const token = response.data.token;
-    localStorage.setItem('bank_token', token); 
-
-    router.push('/dashboard');
+    if (response.data.token) {
+      localStorage.setItem('bank_token', response.data.token); 
+      router.push('/dashboard');
+    }
   } catch (err) {
-    errors.email = err.response?.data?.message || 'Login failed';
+    if (err.response?.status === 403) {
+      errors.email = err.response.data.message; 
+    } else {
+      errors.email = "Invalid credentials.";
+    }
   } finally {
     isLoading.value = false;
   }
