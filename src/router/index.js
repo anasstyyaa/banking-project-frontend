@@ -1,14 +1,47 @@
-import { createRouter, createWebHashHistory } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
 import LoginPage from '@/components/pages/LoginPage.vue'
 import RegisterPage from '@/components/pages/RegisterPage.vue'
+import EmployeeDashboardPage from '@/components/pages/EmployeeDashboardPage.vue'
 
 const router = createRouter({
-  history: createWebHashHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/', redirect: '/login' },
-    { path: '/login', component: LoginPage },
-    { path: '/register', component: RegisterPage }
+    { 
+      path: '/login', 
+      component: LoginPage,
+      meta: { guestOnly: true } 
+    },
+    { 
+      path: '/register', 
+      component: RegisterPage,
+      meta: { guestOnly: true } 
+    },
+    { 
+      path: '/employee/dashboard', 
+      component: EmployeeDashboardPage,
+      meta: { requiresAuth: true, role: 'ROLE_EMPLOYEE' } 
+    }
   ],
+})
+
+
+router.beforeEach((to, from, next) => {
+  const loggedInUser = JSON.parse(localStorage.getItem('user'));
+
+  if (to.meta.requiresAuth && !loggedInUser) {
+    return next('/login');
+  }
+
+  if (to.meta.guestOnly && loggedInUser) {
+    return next(loggedInUser.role === 'ROLE_EMPLOYEE' ? '/employee/dashboard' : '/dashboard');
+  }
+
+  if (to.meta.role && loggedInUser.role !== to.meta.role) {
+    return next(loggedInUser.role === 'ROLE_EMPLOYEE' ? '/employee/dashboard' : '/dashboard');
+  }
+
+  next();
 })
 
 export default router

@@ -65,15 +65,23 @@ const handleLogin = async () => {
     const response = await api.post('/auth/login', loginData);
 
     if (response.data.token) {
-      localStorage.setItem('bank_token', response.data.token); 
-      router.push('/dashboard');
+      
+      const userData = {
+        token: response.data.token,
+        email: response.data.email,
+        role: response.data.role
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userData)); 
+
+      if (userData.role === 'ROLE_EMPLOYEE') {
+        router.push('/employee/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     }
   } catch (err) {
-    if (err.response?.status === 403) {
-      errors.email = err.response.data.message; 
-    } else {
-      errors.email = "Invalid credentials.";
-    }
+    errors.email = err.response?.data?.message || "Invalid credentials.";
   } finally {
     isLoading.value = false;
   }
