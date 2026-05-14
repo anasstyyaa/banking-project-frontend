@@ -2,16 +2,38 @@
   <AuthLayout>
     <template #form>
       <AuthForm 
-        title="Open Account" 
-        subtitle="Join our bank in less than 2 minutes"
-        buttonText="Register Now"
+        title="Open a Bank Account" 
+        subtitle="Please fill in your legal details to join InHolland Bank."
+        buttonText="Create Account"
         :loading="isLoading"
         @submit="handleRegister"
       >
         <template #fields>
-          <FormField label="Full Name" v-model="regData.name" placeholder="John Doe" />
-          <FormField label="Email" v-model="regData.email" placeholder="john@example.com" />
-          <FormField label="Password" type="password" v-model="regData.password" placeholder="••••••••" />
+          <div class="form-row">
+            <FormField label="First Name" v-model="regData.firstName" placeholder="John" />
+            <FormField label="Last Name" v-model="regData.lastName" placeholder="Doe" />
+          </div>
+
+          <FormField 
+            label="Email Address" 
+            v-model="regData.email" 
+            :error="errors.email" 
+          />
+
+          <FormField 
+            label="Phone Number" 
+            v-model="regData.phoneNumber" 
+            placeholder="+31 6 12345678" 
+            :error="errors.phoneNumber" 
+          />
+
+          <FormField label="BSN (Burgerservicenummer)" v-model="regData.bsn" placeholder="123456789" />
+          <FormField 
+            label="Password" 
+            type="password" 
+            v-model="regData.password" 
+            :error="errors.password" 
+          />
         </template>
         
         <template #footer>
@@ -25,17 +47,110 @@
 
 <script setup>
 import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import api from '@/api/axios'; 
 import AuthLayout from '@/components/templates/AuthLayout/AuthLayout.vue';
 import AuthForm from '@/components/organisms/AuthForm/AuthForm.vue';
 import FormField from '@/components/molecules/FormField/FormField.vue';
 import AppText from '@/components/atoms/Text/Text.vue';
 
+const router = useRouter();
 const isLoading = ref(false);
-const regData = reactive({ name: '', email: '', password: '' });
 
-const handleRegister = () => {
+const errors = reactive({
+  email: '',
+  password: '',
+  firstName: '',
+  lastName: '',
+  bsn: '',
+  phoneNumber: ''
+});
+
+const regData = reactive({
+  email: '',
+  password: '',
+  bsn: '',
+  firstName: '',
+  lastName: '',
+  phoneNumber: ''
+});
+
+
+const validate = () => {
+  let isValid = true;
+  
+  if (!regData.email.includes('@')) {
+    errors.email = 'Please enter a valid email address.';
+    isValid = false;
+  }
+  
+  if (regData.password.length < 8) {
+    errors.password = 'Password must be at least 8 characters long.';
+    isValid = false;
+  }
+
+  const phoneRegex = /^(^\+|^00)?[0-9\s.-]{9,15}$/;
+  
+  if (!regData.phoneNumber) {
+    errors.phoneNumber = 'Phone number is required.';
+    isValid = false;
+  } else if (!phoneRegex.test(regData.phoneNumber)) {
+    errors.phoneNumber = 'Please enter a valid phone number (e.g., 0612345678).';
+    isValid = false;
+  }
+
+  return isValid;
+};
+
+const handleRegister = async () => {
+  Object.keys(errors).forEach(key => errors[key] = '');
+
+  if (!validate()) return;
   isLoading.value = true;
-  // Your Registration Logic
-  setTimeout(() => isLoading.value = false, 2000);
+
+  const payload = { 
+    ...regData, 
+    phoneNumber: regData.phoneNumber.replace(/[\s.-]/g, '') 
+  };
+
+  try {
+    await api.post('/auth/register', payload);
+    router.push('/login');
+  } catch (err) {
+    if (err.response?.status === 409) {
+      errors.email = "This email is already registered. Please use another or login.";
+    } 
+    else if (err.response?.data?.errors) {
+      Object.assign(errors, err.response.data.errors);
+    } 
+    else {
+      errors.email = "An error occurred during registration.";
+    }
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
+
+<style scoped>
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.link {
+  color: var(--color-secondary);
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+</style>

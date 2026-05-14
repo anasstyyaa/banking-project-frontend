@@ -19,8 +19,8 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import { fetchAccounts } from '@/api/accounts';
-import { createTransaction } from '@/api/transactions';
+import AccountService from '@/services/account.service';
+import TransactionService from '@/services/transaction.service';
 import BankingLayout from '@/components/templates/BankingLayout/BankingLayout.vue';
 import TransferForm from '@/components/organisms/TransferForm/TransferForm.vue';
 import AppText from '@/components/atoms/Text/Text.vue';
@@ -32,7 +32,8 @@ const success = ref('');
 
 const loadAccounts = async () => {
   try {
-    accounts.value = await fetchAccounts();
+    const response = await AccountService.getAccounts();
+    accounts.value = response.data;
   } catch (err) {
     error.value = err.response?.data?.message || 'Accounts could not be loaded.';
   }
@@ -43,7 +44,7 @@ const submitTransfer = async (payload) => {
   error.value = '';
   success.value = '';
   try {
-    await createTransaction(payload);
+    await TransactionService.createTransaction(payload);
     success.value = 'Transfer completed.';
     await loadAccounts();
   } catch (err) {

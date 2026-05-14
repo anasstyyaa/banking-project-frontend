@@ -15,8 +15,8 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { fetchAccounts } from '@/api/accounts';
-import { fetchTransactions } from '@/api/transactions';
+import AccountService from '@/services/account.service';
+import TransactionService from '@/services/transaction.service';
 import BankingLayout from '@/components/templates/BankingLayout/BankingLayout.vue';
 import AccountSummary from '@/components/organisms/AccountSummary/AccountSummary.vue';
 import TransactionList from '@/components/organisms/TransactionList/TransactionList.vue';
@@ -29,12 +29,12 @@ const accountIbans = computed(() => accounts.value.map((account) => account.iban
 
 const loadDashboard = async () => {
   try {
-    const [accountData, transactionData] = await Promise.all([
-      fetchAccounts(),
-      fetchTransactions()
+    const [accountResponse, transactionResponse] = await Promise.all([
+      AccountService.getAccounts(),
+      TransactionService.getTransactions()
     ]);
-    accounts.value = accountData;
-    transactions.value = transactionData;
+    accounts.value = accountResponse.data;
+    transactions.value = transactionResponse.data;
   } catch (err) {
     error.value = err.response?.data?.message || 'Dashboard could not be loaded.';
   }

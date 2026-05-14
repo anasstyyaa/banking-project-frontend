@@ -35,7 +35,10 @@ import NavItem from '@/components/molecules/NavItem/NavItem.vue';
 
 const route = useRoute();
 const router = useRouter();
-const userEmail = computed(() => localStorage.getItem('user_email') || 'Authenticated user');
+const userEmail = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  return user?.email || 'Authenticated user';
+});
 
 const isActive = (path) => route.path === path;
 
@@ -43,8 +46,7 @@ const goTo = (path) => router.push(path);
 
 const logout = () => {
   localStorage.removeItem('token');
-  localStorage.removeItem('user_email');
-  localStorage.removeItem('user_role');
+  localStorage.removeItem('user');
   router.push('/login');
 };
 </script>

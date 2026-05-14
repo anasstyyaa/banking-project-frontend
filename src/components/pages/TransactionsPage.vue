@@ -15,8 +15,8 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue';
-import { fetchAccounts } from '@/api/accounts';
-import { fetchTransactions } from '@/api/transactions';
+import AccountService from '@/services/account.service';
+import TransactionService from '@/services/transaction.service';
 import BankingLayout from '@/components/templates/BankingLayout/BankingLayout.vue';
 import TransactionFilters from '@/components/organisms/TransactionFilters/TransactionFilters.vue';
 import TransactionList from '@/components/organisms/TransactionList/TransactionList.vue';
@@ -30,7 +30,8 @@ const accountIbans = computed(() => accounts.value.map((account) => account.iban
 const loadTransactions = async (filters = {}) => {
   try {
     error.value = '';
-    transactions.value = await fetchTransactions(filters);
+    const response = await TransactionService.getTransactions(filters);
+    transactions.value = response.data;
   } catch (err) {
     error.value = err.response?.data?.message || 'Transactions could not be loaded.';
   }
@@ -38,7 +39,8 @@ const loadTransactions = async (filters = {}) => {
 
 const loadAccounts = async () => {
   try {
-    accounts.value = await fetchAccounts();
+    const response = await AccountService.getAccounts();
+    accounts.value = response.data;
   } catch (err) {
     error.value = err.response?.data?.message || 'Accounts could not be loaded.';
   }

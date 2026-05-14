@@ -56,23 +56,32 @@ const errors = reactive({
   password: ''
 });
 
-
 const handleLogin = async () => {
+  errors.email = '';
+  errors.password = '';
+  
   isLoading.value = true;
   try {
-    const response = await api.post('/auth/login', {
-      email: loginData.email,
-      password: loginData.password
-    });
+    const response = await api.post('/auth/login', loginData);
 
-    const token = response.data.token;
-    localStorage.setItem('token', token);
-    localStorage.setItem('user_email', response.data.email);
-    localStorage.setItem('user_role', response.data.role);
+    if (response.data.token) {
+      
+      const userData = {
+        token: response.data.token,
+        email: response.data.email,
+        role: response.data.role
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userData)); 
 
-    router.push('/dashboard');
+      if (userData.role === 'ROLE_EMPLOYEE') {
+        router.push('/employee/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
+    }
   } catch (err) {
-    errors.email = err.response?.data?.message || 'Login failed';
+    errors.email = err.response?.data?.message || "Invalid credentials.";
   } finally {
     isLoading.value = false;
   }
