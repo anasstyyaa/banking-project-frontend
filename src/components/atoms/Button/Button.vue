@@ -53,6 +53,13 @@ withDefaults(defineProps<Props>(), {
   background: var(--color-primary); 
   color: var(--color-white); 
 }
+.ghost {
+  background: transparent;
+  color: var(--color-primary-dark);
+}
+.ghost:hover {
+  background: var(--color-primary);
+}
 
 .md { padding: var(--space-sm) var(--space-lg); font-size: 1rem; }
 .sm { padding: var(--space-xs) var(--space-md); font-size: 0.875rem; }
