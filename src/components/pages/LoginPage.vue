@@ -60,12 +60,18 @@ const handleLogin = async () => {
   errors.email = '';
   errors.password = '';
   
+  if (!loginData.email || !loginData.password) {
+    if (!loginData.email) errors.email = 'Email address is required.';
+    if (!loginData.password) errors.password = 'Password is required.';
+    return;
+  }
+  
   isLoading.value = true;
+  
   try {
     const response = await api.post('/auth/login', loginData);
 
     if (response.data.token) {
-      
       const userData = {
         token: response.data.token,
         email: response.data.email,
@@ -81,10 +87,25 @@ const handleLogin = async () => {
       }
     }
   } catch (err) {
-    errors.email = err.response?.data?.message || "Invalid credentials.";
+    const statusCode = err.response?.status;
+    const backendMessage = err.response?.data?.message || err.response?.data?.reason || '';
+
+    if (statusCode === 403 || backendMessage.includes('ACCOUNT_PENDING_APPROVAL')) {
+      logPendingAttempt(loginData.email);
+      
+      router.push('/pending-approval');
+    } else if (statusCode === 401) {
+      errors.email = "Invalid email address or password configuration.";
+    } else {
+      errors.email = "An unexpected banking system error occurred. Please try again later.";
+    }
   } finally {
     isLoading.value = false;
   }
+};
+
+const logPendingAttempt = (email) => {
+  console.warn(`[Auth-Gate] User identity context '${email}' redirected to pending view pipeline.`);
 };
 </script>
 

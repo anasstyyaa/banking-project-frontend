@@ -6,6 +6,7 @@ import DashboardPage from '@/components/pages/DashboardPage.vue'
 import TransactionsPage from '@/components/pages/TransactionsPage.vue'
 import TransferPage from '@/components/pages/TransferPage.vue'
 import AtmPage from '@/components/pages/AtmPage.vue'
+import PendingApprovalPage from '@/components/pages/PendingApprovalPage.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -45,6 +46,11 @@ const router = createRouter({
       path: '/atm',
       component: AtmPage,
       meta: { requiresAuth: true, role: 'ROLE_CUSTOMER' }
+    }, 
+    {
+      path: '/pending-approval',
+      component: PendingApprovalPage,
+      meta: { requiresAuth: false } // open access for redirected flows
     }
   ],
 })
