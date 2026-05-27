@@ -19,25 +19,35 @@
     </td>
 
     <td>
-      <AppBadge type="warning">Pending</AppBadge>
+      <AppBadge :type="user.isApproved ? 'success' : 'warning'">
+        {{ user.isApproved ? 'Active' : 'Pending' }}
+      </AppBadge>
     </td>
 
     <td class="actions">
-      <AppButton 
-        variant="primary" 
-        size="sm" 
-        @click="$emit('approve', user.id)"
-      >
-        Approve
-      </AppButton>
-      <AppButton 
-        variant="ghost" 
-        size="sm" 
-        class="deny-btn"
-        @click="$emit('deny', user.id)"
-      >
-        Deny
-      </AppButton>
+      <template v-if="isReadOnly">
+        <AppText size="sm" weight="bold" class="iban-display">
+          {{ user.iban || 'No IBAN Assigned' }}
+        </AppText>
+      </template>
+
+      <template v-else>
+        <AppButton 
+          variant="primary" 
+          size="sm" 
+          @click="$emit('approve', user.id)"
+        >
+          Approve
+        </AppButton>
+        <AppButton 
+          variant="ghost" 
+          size="sm" 
+          class="deny-btn"
+          @click="$emit('deny', user.id)"
+        >
+          Deny
+        </AppButton>
+      </template>
     </td>
   </tr>
 </template>
@@ -52,6 +62,10 @@ defineProps({
   user: {
     type: Object,
     required: true
+  },
+  isReadOnly: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -94,6 +108,12 @@ defineEmits(['approve', 'deny']);
 .actions {
   text-align: right;
   white-space: nowrap;
+}
+
+.iban-display {
+  font-family: monospace;
+  letter-spacing: 0.05em;
+  color: var(--color-primary-dark);
 }
 
 .deny-btn {
