@@ -5,32 +5,22 @@
     </template>
 
     <template #header-actions>
-      <SearchInput 
-        v-model="searchQuery" 
-        :placeholder="searchPlaceholder" 
-        style="max-width: 400px" 
-      />
+      <SearchInput v-model="searchQuery" :placeholder="searchPlaceholder" style="max-width: 400px" />
     </template>
 
     <template #content>
       <div class="tabs-container">
-        <button 
-          :class="['tab-btn', { active: activeTab === 'pending' }]"
-          @click="handleTabChange('pending')"
-        >
+        <button :class="['tab-btn', { active: activeTab === 'pending' }]" @click="activeTab = 'pending'">
           <AppText weight="bold">Pending Requests</AppText>
-          <AppBadge v-if="pendingUsers.length" type="warning">
-            {{ pendingUsers.length }}
+          <AppBadge v-if="employeeStore.pendingUsers.length" type="warning">
+            {{ employeeStore.pendingUsers.length }}
           </AppBadge>
         </button>
 
-        <button 
-          :class="['tab-btn', { active: activeTab === 'active' }]"
-          @click="handleTabChange('active')"
-        >
+        <button :class="['tab-btn', { active: activeTab === 'active' }]" @click="activeTab = 'active'">
           <AppText weight="bold">Active Customers</AppText>
-          <AppBadge v-if="activeUsers.length" type="info">
-            {{ activeUsers.length }}
+          <AppBadge v-if="employeeStore.activeUsers.length" type="info">
+            {{ employeeStore.activeUsers.length }}
           </AppBadge>
         </button>
       </div>
@@ -53,27 +43,12 @@
           <AppText size="sm" muted>
             Showing <b>{{ rowRangeStart }}</b> to <b>{{ rowRangeEnd }}</b> of <b>{{ totalRows }}</b> items
           </AppText>
-          
           <div class="pagination-controls">
-            <button 
-              class="nav-btn" 
-              :disabled="currentPage === 1" 
-              @click="currentPage--"
-            >
-              Previous
-            </button>
-            
+            <button class="nav-btn" :disabled="currentPage === 1" @click="currentPage--">Previous</button>
             <span class="page-indicator">
               <AppText size="sm" weight="bold">Page {{ currentPage }} of {{ totalPages }}</AppText>
             </span>
-
-            <button 
-              class="nav-btn" 
-              :disabled="currentPage === totalPages" 
-              @click="currentPage++"
-            >
-              Next
-            </button>
+            <button class="nav-btn" :disabled="currentPage === totalPages" @click="currentPage++">Next</button>
           </div>
         </div>
       </div>
@@ -84,6 +59,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useEmployeeStore } from '@/stores/employee.store';
 import AppSidebar from '@/components/organisms/Sidebar/Sidebar.vue';
 import RegistrationTable from '@/components/organisms/RegistrationTable/RegistrationTable.vue';
 import SearchInput from '@/components/molecules/SearchInput/SearchInput.vue';
@@ -94,7 +70,7 @@ import EmployeeService from '@/services/employee.service';
 import AuthService from '@/services/auth.service';
 
 const router = useRouter();
-
+const employeeStore = useEmployeeStore();
 
 const activeTab = ref('pending'); 
 
@@ -130,7 +106,7 @@ const searchPlaceholder = computed(() => {
 
 const filteredUsers = computed(() => {
   const term = searchQuery.value.toLowerCase().trim();
-  const targetDataset = activeTab.value === 'pending' ? pendingUsers.value : activeUsers.value;
+  const targetDataset = activeTab.value === 'pending' ? employeeStore.pendingUsers : employeeStore.activeUsers;
 
   if (!term) return targetDataset;
 
@@ -160,47 +136,27 @@ const handleTabChange = (tabName) => {
   activeTab.value = tabName;
 };
 
-
-watch(searchQuery, () => {
-  currentPage.value = 1;
-});
-
-const fetchData = async () => {
-  try {
-    isLoading.value = true;
-    const [pendingRes, activeRes] = await Promise.all([
-      EmployeeService.getPendingRegistrations(),
-      EmployeeService.getActiveCustomers() 
-    ]);
-    
-    pendingUsers.value = pendingRes.data;
-    activeUsers.value = activeRes.data;
-  } catch (err) {
-    console.error("Failed to sync employee data grids:", err);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
 const handleApprove = async (id) => {
-  await EmployeeService.approveUser(id);
-  fetchData(); 
+  await employeeStore.approveUser(id);
 };
 
 const handleDeny = async (id) => {
   if (confirm("Reject this application? This deletes the registration record.")) {
-    await EmployeeService.denyUser(id);
-    fetchData();
+    await employeeStore.denyUser(id);
   }
 };
+
+watch(searchQuery, () => { currentPage.value = 1; });
+
+onMounted(() => {
+  employeeStore.fetchData();
+});
 
 const handleLogout = async () => {
   try { await AuthService.logout(); } 
   catch (err) { console.warn("Backend session invalid, proceeding with local clear."); } 
   finally { router.push('/login'); }
 };
-
-onMounted(fetchData);
 </script>
 
 <style scoped>
