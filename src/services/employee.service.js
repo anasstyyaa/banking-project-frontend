@@ -2,11 +2,15 @@ import api from '@/api/axios';
 
 class EmployeeService {
   getPendingRegistrations() {
-    return api.get('/employee/pending-registrations');
+    return api.get('/employee/pending');
   }
 
   getActiveCustomers() {
-    return api.get('/employee/active-customers'); 
+    return api.get('/employee/customers'); 
+  }
+
+  getAllSystemAccounts() {
+    return api.get('/accounts'); 
   }
 
   approveUser(userId) {

@@ -7,6 +7,7 @@ import TransactionsPage from '@/components/pages/TransactionsPage.vue'
 import TransferPage from '@/components/pages/TransferPage.vue'
 import AtmPage from '@/components/pages/AtmPage.vue'
 import PendingApprovalPage from '@/components/pages/PendingApprovalPage.vue';
+import EmployeeAccountsPage from '@/components/pages/EmployeeAccountsPage.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,11 +23,16 @@ const router = createRouter({
       component: RegisterPage,
       meta: { guestOnly: true } 
     },
-    { 
-      path: '/employee/dashboard', 
+    {
+      path: '/employee/registrations',
       component: EmployeeDashboardPage,
-      meta: { requiresAuth: true, role: 'ROLE_EMPLOYEE' } 
+      meta: { requiresAuth: true, role: 'ROLE_EMPLOYEE' }
     },
+    {
+      path: '/employee/accounts',
+      component: EmployeeAccountsPage,
+      meta: { requiresAuth: true, role: 'ROLE_EMPLOYEE' }
+    }, 
     {
       path: '/dashboard',
       component: DashboardPage,
@@ -50,28 +56,30 @@ const router = createRouter({
     {
       path: '/pending-approval',
       component: PendingApprovalPage,
-      meta: { requiresAuth: false } // open access for redirected flows
+      meta: { requiresAuth: false } 
+    },
+    { 
+      path: '/employee/dashboard', 
+      redirect: '/employee/registrations' 
     }
   ],
 })
 
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   const loggedInUser = JSON.parse(localStorage.getItem('user'));
 
   if (to.meta.requiresAuth && !loggedInUser) {
-    return next('/login');
+    return '/login';
   }
 
   if (to.meta.guestOnly && loggedInUser) {
-    return next(loggedInUser.role === 'ROLE_EMPLOYEE' ? '/employee/dashboard' : '/dashboard');
+    return loggedInUser.role === 'ROLE_EMPLOYEE' ? '/employee/registrations' : '/dashboard';
   }
 
   if (to.meta.role && loggedInUser.role !== to.meta.role) {
-    return next(loggedInUser.role === 'ROLE_EMPLOYEE' ? '/employee/dashboard' : '/dashboard');
+    return loggedInUser.role === 'ROLE_EMPLOYEE' ? '/employee/registrations' : '/dashboard';
   }
-
-  next();
 })
 
 export default router
