@@ -114,8 +114,15 @@ const handleRegister = async () => {
   };
 
   try {
-    await api.post('/auth/register', payload);
-    router.push('/login');
+    const response = await api.post('/auth/register', payload);
+
+    const pendingUserData = {
+      email: payload.email,
+      role: response.data.role || 'ROLE_CUSTOMER'
+    };
+    localStorage.setItem('user', JSON.stringify(pendingUserData));
+    router.push('/pending-approval');
+
   } catch (err) {
     if (err.response?.status === 409) {
       errors.email = "This email is already registered. Please use another or login.";
