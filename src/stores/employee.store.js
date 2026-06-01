@@ -6,7 +6,8 @@ export const useEmployeeStore = defineStore('employee', {
     pendingUsers: [],
     activeUsers: [],
     isLoading: false,
-    isProcessingApproval: false 
+    isProcessingApproval: false,
+    isCreatingAccount: false 
   }),
 
   actions: {
@@ -50,6 +51,20 @@ export const useEmployeeStore = defineStore('employee', {
         await this.fetchData();
       } catch (err) {
         console.error("Error during employee deny execution process:", err);
+      }
+    },
+    async createCustomerAccount(userId, accountType) {
+      if (this.isCreatingAccount) return;
+      this.isCreatingAccount = true;
+      
+      try {
+        const response = await EmployeeService.createCustomerAccount(userId, accountType);
+        return response.data;
+      } catch (err) {
+        console.error("Error during employee account generation action loop:", err);
+        throw err; 
+      } finally {
+        this.isCreatingAccount = false;
       }
     }
   }

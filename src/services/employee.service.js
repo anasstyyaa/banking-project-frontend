@@ -20,6 +20,12 @@ class EmployeeService {
   denyUser(userId) {
     return api.delete(`/employee/deny/${userId}`);
   }
+
+  createCustomerAccount(userId, accountType) {
+    return api.post(`/employee/customers/${userId}/accounts`, {
+      accountType: accountType
+    });
+  }
 }
 
 export default new EmployeeService();

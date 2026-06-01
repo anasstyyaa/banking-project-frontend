@@ -138,7 +138,7 @@ const showModal = ref(false);
 const selectedUser = ref(null);
 const allAccountsList = ref([]); 
 
-// Pagination Parameters matching dashboard standards
+
 const ITEMS_PER_PAGE = 8;
 const currentPage = ref(1);
 
@@ -159,14 +159,14 @@ const filteredAccounts = computed(() => {
   );
 });
 
-// Compute target slices for local client-side pagination arrays
+
 const paginatedAccounts = computed(() => {
   const startIndex = (currentPage.value - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   return filteredAccounts.value.slice(startIndex, endIndex);
 });
 
-// Dynamic evaluation formulas for displaying contextual row strings
+
 const totalRows = computed(() => filteredAccounts.value.length);
 const totalPages = computed(() => Math.ceil(totalRows.value / ITEMS_PER_PAGE) || 1);
 const rowRangeStart = computed(() => (totalRows.value === 0 ? 0 : (currentPage.value - 1) * ITEMS_PER_PAGE + 1));
@@ -194,9 +194,12 @@ const handleAccountGeneration = async (accountType) => {
   try {
     await employeeStore.createCustomerAccount(selectedUser.value.id, accountType);
     await fetchAccountsLedger(); 
+    
     closeModal();
   } catch (err) {
-    alert("Generation step aborted. Check system permissions logs.");
+    console.error("Frontend generation step error context:", err);
+    const errorDetails = err.response?.data?.message || err.message || "Unknown error";
+    alert(`Generation feedback notice: ${errorDetails}`);
   }
 };
 
@@ -205,7 +208,7 @@ const handleLogout = async () => {
   router.push('/login');
 };
 
-// Reset current pagination page reference back to first page when filtering collections
+
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
