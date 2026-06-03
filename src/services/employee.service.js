@@ -21,10 +21,8 @@ class EmployeeService {
     return api.delete(`/employee/deny/${userId}`);
   }
 
-  createCustomerAccount(userId, accountType) {
-    return api.post(`/employee/customers/${userId}/accounts`, {
-      accountType: accountType
-    });
+  createCustomerAccount(userId, payload) {
+    return api.post(`/employee/customers/${userId}/accounts`, payload);
   }
 }
 

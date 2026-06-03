@@ -60,7 +60,7 @@ const search = async (name) => {
   error.value = '';
   searched.value = true;
   try {
-    const response = await AccountService.searchByName(name);
+    const response = await AccountService.search(name);
     results.value = response.data;
   } catch (err) {
     error.value = err.response?.data?.message || 'Search failed.';

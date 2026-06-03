@@ -9,9 +9,13 @@ class AccountService {
     return api.get(`/accounts/${iban}`);
   }
 
-  searchByName(name) {
-  return api.get('/accounts/search', { params: { name } });
-}
+  search(query) {
+    return api.get('/accounts/search', { params: { query } });
+  }
+
+  updateLimits(iban, payload) {
+    return api.patch(`/accounts/${iban}/limits`, payload);
+  }
 }
 
 export default new AccountService();
