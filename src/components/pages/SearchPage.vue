@@ -69,10 +69,14 @@ const search = async (name) => {
   }
 };
 
-const copyIban = (iban) => {
-  navigator.clipboard.writeText(iban);
-  copiedIban.value = iban;
-  setTimeout(() => (copiedIban.value = ''), 2000);
+const copyIban = async (iban) => {
+  try {
+    await navigator.clipboard.writeText(iban);
+    copiedIban.value = iban;
+    setTimeout(() => (copiedIban.value = ''), 2000);
+  } catch {
+    error.value = 'Unable to copy IBAN. Please try again.';
+  }
 };
 </script>
 
