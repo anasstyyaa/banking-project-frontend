@@ -9,6 +9,7 @@ import AtmPage from "@/components/pages/AtmPage.vue";
 import PendingApprovalPage from "@/components/pages/PendingApprovalPage.vue";
 import EmployeeAccountsPage from "@/components/pages/EmployeeAccountsPage.vue";
 import SearchPage from "@/components/pages/SearchPage.vue";
+import EmployeeTransactionsPage from "@/components/pages/EmployeeTransactionsPage.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -36,6 +37,11 @@ const router = createRouter({
     {
       path: "/employee/accounts",
       component: EmployeeAccountsPage,
+      meta: { requiresAuth: true, role: "ROLE_EMPLOYEE" },
+    },
+    {
+      path: "/employee/transactions",
+      component: EmployeeTransactionsPage,
       meta: { requiresAuth: true, role: "ROLE_EMPLOYEE" },
     },
     {
