@@ -6,6 +6,8 @@ import DashboardPage from "@/components/pages/DashboardPage.vue";
 import TransactionsPage from "@/components/pages/TransactionsPage.vue";
 import TransferPage from "@/components/pages/TransferPage.vue";
 import AtmPage from "@/components/pages/AtmPage.vue";
+import PendingApprovalPage from "@/components/pages/PendingApprovalPage.vue";
+import EmployeeAccountsPage from "@/components/pages/EmployeeAccountsPage.vue";
 import SearchPage from "@/components/pages/SearchPage.vue";
 
 const router = createRouter({
@@ -23,8 +25,17 @@ const router = createRouter({
       meta: { guestOnly: true },
     },
     {
-      path: "/employee/dashboard",
+      path: "/employee/registrations",
       component: EmployeeDashboardPage,
+      meta: { requiresAuth: true, role: "ROLE_EMPLOYEE" },
+    },
+    {
+      path: "/employee/dashboard",
+      redirect: "/employee/registrations",
+    },
+    {
+      path: "/employee/accounts",
+      component: EmployeeAccountsPage,
       meta: { requiresAuth: true, role: "ROLE_EMPLOYEE" },
     },
     {
@@ -52,6 +63,11 @@ const router = createRouter({
       component: SearchPage,
       meta: { requiresAuth: true, role: "ROLE_CUSTOMER" },
     },
+    {
+      path: "/pending-approval",
+      component: PendingApprovalPage,
+      meta: { requiresAuth: false },
+    },
   ],
 });
 
@@ -65,7 +81,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta.guestOnly && loggedInUser) {
     return next(
       loggedInUser.role === "ROLE_EMPLOYEE"
-        ? "/employee/dashboard"
+        ? "/employee/registrations"
         : "/dashboard",
     );
   }
@@ -73,7 +89,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta.role && loggedInUser.role !== to.meta.role) {
     return next(
       loggedInUser.role === "ROLE_EMPLOYEE"
-        ? "/employee/dashboard"
+        ? "/employee/registrations"
         : "/dashboard",
     );
   }

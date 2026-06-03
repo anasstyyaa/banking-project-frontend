@@ -6,23 +6,33 @@
           <th><AppText size="xs" weight="bold" muted>USER DETAILS</AppText></th>
           <th><AppText size="xs" weight="bold" muted>BSN</AppText></th>
           <th><AppText size="xs" weight="bold" muted>STATUS</AppText></th>
-          <th class="text-right"><AppText size="xs" weight="bold" muted>ACTIONS</AppText></th>
+          
+          <th :class="isReadOnly ? 'text-left' : 'text-right'">
+            <AppText size="xs" weight="bold" muted>
+              {{ isReadOnly ? 'ACCOUNT INFO' : 'ACTIONS' }}
+            </AppText>
+          </th>
         </tr>
       </thead>
+      
       <tbody v-if="users.length > 0">
         <RegistrationRow 
           v-for="user in users" 
           :key="user.id" 
           :user="user"
+          :is-read-only="isReadOnly"
           @approve="$emit('approve', $event)"
           @deny="$emit('deny', $event)"
         />
       </tbody>
+      
       <tbody v-else>
         <tr>
           <td colspan="4" class="empty-cell">
             <AppIcon name="Inbox" :size="48" class="empty-icon" />
-            <AppText size="sm" muted>No pending requests found</AppText>
+            <AppText size="sm" muted>
+              {{ isReadOnly ? 'No active customers registered in the system.' : 'No pending requests found.' }}
+            </AppText>
           </td>
         </tr>
       </tbody>
@@ -35,11 +45,16 @@ import RegistrationRow from '@/components/molecules/RegistrationRow/Registration
 import AppText from '@/components/atoms/Text/Text.vue';
 import AppIcon from '@/components/atoms/AppIcon/AppIcon.vue';
 
+
 defineProps({
   users: {
     type: Array,
     required: true,
     default: () => []
+  },
+  isReadOnly: {
+    type: Boolean,
+    default: false 
   }
 });
 
@@ -69,6 +84,11 @@ th {
 
 .text-right {
   text-align: right;
+  padding-right: var(--space-xl); 
+}
+
+.text-left {
+  text-align: left;
 }
 
 .empty-cell {
@@ -81,7 +101,6 @@ th {
   margin-bottom: var(--space-sm);
   opacity: 0.5;
 }
-
 
 :deep(.registration-row:last-child td) {
   border-bottom: none;

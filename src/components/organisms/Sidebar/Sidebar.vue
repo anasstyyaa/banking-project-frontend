@@ -6,39 +6,28 @@
     </div>
 
     <nav class="sidebar-nav">
-      <NavItem 
-        icon="LayoutDashboard" 
-        :active="currentRoute === 'dashboard'" 
-        @navigate="$emit('route-change', 'dashboard')"
-      >
-        Dashboard
-      </NavItem>
-      
-      <NavItem 
-        icon="Users" 
-        :active="currentRoute === 'registrations'" 
-        @navigate="$emit('route-change', 'registrations')"
-      >
-        User Requests
-      </NavItem>
+      <RouterLink to="/employee/registrations" class="menu-item" active-class="active">
+        <AppIcon name="UserCheck" :size="20" />
+        <AppText size="sm" weight="bold">User Requests</AppText>
+      </RouterLink>
 
-      <NavItem 
-        icon="CreditCard" 
-        :active="currentRoute === 'accounts'" 
-        @navigate="$emit('route-change', 'accounts')"
-      >
-        Accounts
-      </NavItem>
+      <RouterLink to="/employee/accounts" class="menu-item" active-class="active">
+        <AppIcon name="CreditCard" :size="20" />
+        <AppText size="sm" weight="bold">Accounts</AppText>
+      </RouterLink>
     </nav>
 
     <div class="sidebar-footer">
-      <NavItem icon="LogOut" @navigate="$emit('logout')">Logout</NavItem>
+      <button class="logout-btn" @click="$emit('logout')">
+        <AppIcon name="LogOut" :size="20" />
+        <AppText size="sm" weight="bold">Logout</AppText>
+      </button>
     </div>
   </aside>
 </template>
 
 <script setup>
-import NavItem from '@/components/molecules/NavItem/NavItem.vue';
+import { RouterLink } from 'vue-router';
 import AppText from '@/components/atoms/Text/Text.vue';
 import AppIcon from '@/components/atoms/AppIcon/AppIcon.vue';
 
@@ -79,5 +68,69 @@ defineEmits(['route-change', 'logout']);
 .sidebar-footer {
   border-top: 1px solid var(--color-gray-100);
   padding-top: var(--space-md);
+}
+
+/* --- Base Link Styles --- */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--color-gray-500);
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  transition: all 0.2s ease;
+}
+
+/* Force inner child custom atoms to obey wrapper colors */
+.menu-item :deep(.app-icon),
+.menu-item :deep(.app-text) {
+  color: inherit;
+}
+
+.menu-item:hover {
+  background: var(--color-gray-100);
+  color: var(--color-primary-dark);
+}
+
+/* --- Active State Configuration --- */
+.menu-item.active {
+  background: var(--color-secondary); /* Purple background */
+  color: var(--color-white);           /* Pure white text */
+}
+
+/* Active State Hover Configuration */
+.menu-item.active:hover {
+  background: var(--color-gray-500);  /* Turns gray on hover */
+  color: var(--color-white);           /* Keeps text white */
+}
+
+/* --- Logout Action Button --- */
+.logout-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  /* Initial State matching your design criteria */
+  background: var(--color-gray-100);  /* Matches the section split border color */
+  border: 1px solid var(--color-gray-100); /* Border hidden by matching backgrounds */
+  color: var(--color-gray-500);
+}
+
+.logout-btn :deep(.app-icon),
+.logout-btn :deep(.app-text) {
+  color: inherit;
+}
+
+/* Logout Hover Configuration */
+.logout-btn:hover {
+  background: var(--color-secondary);      /* Turns purple on hover */
+  border-color: var(--color-secondary);  /* Updates border to match purple */
+  color: var(--color-white);              /* Shifts text to white */
 }
 </style>
