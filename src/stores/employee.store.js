@@ -1,13 +1,13 @@
-import { defineStore } from 'pinia';
-import EmployeeService from '@/services/employee.service';
+import { defineStore } from "pinia";
+import EmployeeService from "@/services/employee.service";
 
-export const useEmployeeStore = defineStore('employee', {
+export const useEmployeeStore = defineStore("employee", {
   state: () => ({
     pendingUsers: [],
     activeUsers: [],
     isLoading: false,
     isProcessingApproval: false,
-    isCreatingAccount: false 
+    isCreatingAccount: false,
   }),
 
   actions: {
@@ -17,7 +17,7 @@ export const useEmployeeStore = defineStore('employee', {
       try {
         const [pendingRes, activeRes] = await Promise.all([
           EmployeeService.getPendingRegistrations(),
-          EmployeeService.getActiveCustomers()
+          EmployeeService.getActiveCustomers(),
         ]);
         this.pendingUsers = pendingRes.data;
         this.activeUsers = activeRes.data;
@@ -56,16 +56,22 @@ export const useEmployeeStore = defineStore('employee', {
     async createCustomerAccount(userId, accountType) {
       if (this.isCreatingAccount) return;
       this.isCreatingAccount = true;
-      
+
       try {
-        const response = await EmployeeService.createCustomerAccount(userId, accountType);
+        const response = await EmployeeService.createCustomerAccount(
+          userId,
+          accountType,
+        );
         return response.data;
       } catch (err) {
-        console.error("Error during employee account generation action loop:", err);
-        throw err; 
+        console.error(
+          "Error during employee account generation action loop:",
+          err,
+        );
+        throw err;
       } finally {
         this.isCreatingAccount = false;
       }
-    }
-  }
+    },
+  },
 });

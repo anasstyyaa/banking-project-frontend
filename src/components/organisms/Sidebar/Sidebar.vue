@@ -6,14 +6,31 @@
     </div>
 
     <nav class="sidebar-nav">
-      <RouterLink to="/employee/registrations" class="menu-item" active-class="active">
+      <RouterLink
+        to="/employee/registrations"
+        class="menu-item"
+        active-class="active"
+      >
         <AppIcon name="UserCheck" :size="20" />
         <AppText size="sm" weight="bold">User Requests</AppText>
       </RouterLink>
 
-      <RouterLink to="/employee/accounts" class="menu-item" active-class="active">
+      <RouterLink
+        to="/employee/accounts"
+        class="menu-item"
+        active-class="active"
+      >
         <AppIcon name="CreditCard" :size="20" />
         <AppText size="sm" weight="bold">Accounts</AppText>
+      </RouterLink>
+
+      <RouterLink
+        to="/employee/transactions"
+        class="menu-item"
+        active-class="active"
+      >
+        <AppIcon name="ArrowLeftRight" :size="20" />
+        <AppText size="sm" weight="bold">Transactions</AppText>
       </RouterLink>
     </nav>
 
@@ -27,14 +44,14 @@
 </template>
 
 <script setup>
-import { RouterLink } from 'vue-router';
-import AppText from '@/components/atoms/Text/Text.vue';
-import AppIcon from '@/components/atoms/AppIcon/AppIcon.vue';
+import { RouterLink } from "vue-router";
+import AppText from "@/components/atoms/Text/Text.vue";
+import AppIcon from "@/components/atoms/AppIcon/AppIcon.vue";
 
 defineProps({
-  currentRoute: { type: String, default: 'registrations' }
+  currentRoute: { type: String, default: "registrations" },
 });
-defineEmits(['route-change', 'logout']);
+defineEmits(["route-change", "logout"]);
 </script>
 
 <style scoped>
@@ -96,13 +113,13 @@ defineEmits(['route-change', 'logout']);
 /* --- Active State Configuration --- */
 .menu-item.active {
   background: var(--color-secondary); /* Purple background */
-  color: var(--color-white);           /* Pure white text */
+  color: var(--color-white); /* Pure white text */
 }
 
 /* Active State Hover Configuration */
 .menu-item.active:hover {
-  background: var(--color-gray-500);  /* Turns gray on hover */
-  color: var(--color-white);           /* Keeps text white */
+  background: var(--color-gray-500); /* Turns gray on hover */
+  color: var(--color-white); /* Keeps text white */
 }
 
 /* --- Logout Action Button --- */
@@ -115,9 +132,11 @@ defineEmits(['route-change', 'logout']);
   border-radius: var(--border-radius);
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   /* Initial State matching your design criteria */
-  background: var(--color-gray-100);  /* Matches the section split border color */
+  background: var(
+    --color-gray-100
+  ); /* Matches the section split border color */
   border: 1px solid var(--color-gray-100); /* Border hidden by matching backgrounds */
   color: var(--color-gray-500);
 }
@@ -129,8 +148,8 @@ defineEmits(['route-change', 'logout']);
 
 /* Logout Hover Configuration */
 .logout-btn:hover {
-  background: var(--color-secondary);      /* Turns purple on hover */
-  border-color: var(--color-secondary);  /* Updates border to match purple */
-  color: var(--color-white);              /* Shifts text to white */
+  background: var(--color-secondary); /* Turns purple on hover */
+  border-color: var(--color-secondary); /* Updates border to match purple */
+  color: var(--color-white); /* Shifts text to white */
 }
 </style>
