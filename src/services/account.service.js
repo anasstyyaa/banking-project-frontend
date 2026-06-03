@@ -8,6 +8,10 @@ class AccountService {
   getAccountByIban(iban) {
     return api.get(`/accounts/${iban}`);
   }
+
+  searchByName(name) {
+  return api.get('/accounts/search', { params: { name } });
+}
 }
 
 export default new AccountService();
