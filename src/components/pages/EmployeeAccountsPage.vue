@@ -28,7 +28,10 @@
                 <th><AppText size="xs" weight="bold" muted>CUSTOMER</AppText></th>
                 <th><AppText size="xs" weight="bold" muted>IBAN</AppText></th>
                 <th><AppText size="xs" weight="bold" muted>PRODUCT TYPE</AppText></th>
+                <th class="text-right"><AppText size="xs" weight="bold" muted>ABSOLUTE LIMIT</AppText></th>
+                <th class="text-right"><AppText size="xs" weight="bold" muted>DAILY LIMIT</AppText></th>
                 <th class="text-right"><AppText size="xs" weight="bold" muted>AVAILABLE BALANCE</AppText></th>
+                <th class="text-right"><AppText size="xs" weight="bold" muted>ACTIONS</AppText></th>
               </tr>
             </thead>
             <tbody v-if="paginatedAccounts.length > 0">
@@ -45,17 +48,24 @@
                     {{ account.type }}
                   </AppBadge>
                 </td>
+                <td class="text-right"><AppText size="sm">{{ formatMoney(account.absoluteLimit) }}</AppText></td>
+                <td class="text-right"><AppText size="sm">{{ formatMoney(account.dailyLimit) }}</AppText></td>
                 <td class="text-right">
                   <AppText weight="bold" :class="{ 'negative-funds': account.balance < 0 }">
                     € {{ Number(account.balance).toFixed(2) }}
                   </AppText>
+                </td>
+                <td class="text-right">
+                  <AppButton variant="ghost" size="sm" @click="openLimitEditor(account)">
+                    Edit limits
+                  </AppButton>
                 </td>
               </tr>
             </tbody>
             
             <tbody v-else>
               <tr>
-                <td colspan="4" class="empty-state-cell">
+                <td colspan="7" class="empty-state-cell">
                   <div class="empty-state-content">
                     <AppIcon name="Inbox" :size="44" class="empty-icon" />
                     <AppText size="base" weight="bold" class="empty-title">No Matching Accounts</AppText>
@@ -111,6 +121,36 @@
           />
         </div>
       </div>
+
+      <div v-if="editingAccount" class="modal-overlay" @click.self="closeLimitEditor">
+        <form class="modal-card limit-form" @submit.prevent="submitLimitUpdate">
+          <div class="modal-header">
+            <AppText tag="h3" size="lg" weight="bold">Edit Account Limits</AppText>
+            <AppText size="sm" muted>{{ editingAccount.iban }}</AppText>
+          </div>
+
+          <label class="field">
+            <AppText size="sm" weight="bold">Absolute limit</AppText>
+            <input v-model="limitForm.absoluteLimit" class="limit-input" type="number" step="0.01" />
+          </label>
+
+          <label class="field">
+            <AppText size="sm" weight="bold">Daily transfer limit</AppText>
+            <input v-model="limitForm.dailyLimit" class="limit-input" type="number" step="0.01" min="0.01" />
+          </label>
+
+          <AppText v-if="limitError" size="sm" class="error-text">{{ limitError }}</AppText>
+
+          <div class="form-actions">
+            <AppButton type="button" variant="ghost" size="sm" :disabled="isUpdatingLimits" @click="closeLimitEditor">
+              Cancel
+            </AppButton>
+            <AppButton type="submit" variant="primary" size="sm" :loading="isUpdatingLimits">
+              Save limits
+            </AppButton>
+          </div>
+        </form>
+      </div>
     </template>
   </DashboardLayout>
 </template>
@@ -128,6 +168,7 @@ import AppButton from '@/components/atoms/Button/Button.vue';
 import AppIcon from '@/components/atoms/AppIcon/AppIcon.vue';
 import AuthService from '@/services/auth.service';
 import EmployeeService from '@/services/employee.service';
+import AccountService from '@/services/account.service';
 
 const router = useRouter();
 const employeeStore = useEmployeeStore();
@@ -137,6 +178,12 @@ const userSearchQuery = ref('');
 const showModal = ref(false);
 const selectedUser = ref(null);
 const allAccountsList = ref([]); 
+const totalRows = ref(0);
+const totalPages = ref(1);
+const editingAccount = ref(null);
+const isUpdatingLimits = ref(false);
+const limitError = ref('');
+const limitForm = ref({ absoluteLimit: '', dailyLimit: '' });
 
 
 const ITEMS_PER_PAGE = 8;
@@ -144,8 +191,10 @@ const currentPage = ref(1);
 
 const fetchAccountsLedger = async () => {
   try {
-    const res = await EmployeeService.getAllSystemAccounts(); 
-    allAccountsList.value = res.data;
+    const res = await EmployeeService.getAllSystemAccounts({ page: currentPage.value - 1, size: ITEMS_PER_PAGE }); 
+    allAccountsList.value = res.data.content ?? res.data;
+    totalRows.value = res.data.totalElements ?? allAccountsList.value.length;
+    totalPages.value = res.data.totalPages ?? 1;
   } catch (err) {
     console.error("Ledger acquisition pipeline block:", err);
   }
@@ -161,14 +210,10 @@ const filteredAccounts = computed(() => {
 
 
 const paginatedAccounts = computed(() => {
-  const startIndex = (currentPage.value - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  return filteredAccounts.value.slice(startIndex, endIndex);
+  return filteredAccounts.value;
 });
 
 
-const totalRows = computed(() => filteredAccounts.value.length);
-const totalPages = computed(() => Math.ceil(totalRows.value / ITEMS_PER_PAGE) || 1);
 const rowRangeStart = computed(() => (totalRows.value === 0 ? 0 : (currentPage.value - 1) * ITEMS_PER_PAGE + 1));
 const rowRangeEnd = computed(() => Math.min(currentPage.value * ITEMS_PER_PAGE, totalRows.value));
 
@@ -190,9 +235,9 @@ const closeModal = () => {
   userSearchQuery.value = '';
 };
 
-const handleAccountGeneration = async (accountType) => {
+const handleAccountGeneration = async (payload) => {
   try {
-    await employeeStore.createCustomerAccount(selectedUser.value.id, accountType);
+    await employeeStore.createCustomerAccount(selectedUser.value.id, payload);
     await fetchAccountsLedger(); 
     
     closeModal();
@@ -203,6 +248,43 @@ const handleAccountGeneration = async (accountType) => {
   }
 };
 
+const openLimitEditor = (account) => {
+  editingAccount.value = account;
+  limitForm.value = {
+    absoluteLimit: String(account.absoluteLimit),
+    dailyLimit: String(account.dailyLimit)
+  };
+  limitError.value = '';
+};
+
+const closeLimitEditor = () => {
+  editingAccount.value = null;
+  limitError.value = '';
+};
+
+const submitLimitUpdate = async () => {
+  if (limitForm.value.absoluteLimit === '' || Number(limitForm.value.dailyLimit) <= 0) {
+    limitError.value = 'Daily limit must be above zero and absolute limit must be valid.';
+    return;
+  }
+
+  isUpdatingLimits.value = true;
+  try {
+    await AccountService.updateLimits(editingAccount.value.iban, {
+      absoluteLimit: Number(limitForm.value.absoluteLimit),
+      dailyLimit: Number(limitForm.value.dailyLimit)
+    });
+    await fetchAccountsLedger();
+    closeLimitEditor();
+  } catch (err) {
+    limitError.value = err.response?.data?.message || 'Limit update failed.';
+  } finally {
+    isUpdatingLimits.value = false;
+  }
+};
+
+const formatMoney = (value) => `EUR ${Number(value).toFixed(2)}`;
+
 const handleLogout = async () => {
   await AuthService.logout();
   router.push('/login');
@@ -212,6 +294,8 @@ const handleLogout = async () => {
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
+
+watch(currentPage, fetchAccountsLedger);
 
 onMounted(() => {
   employeeStore.fetchData(); 
@@ -370,6 +454,37 @@ onMounted(() => {
 }
 .user-select-row:hover { 
   background: var(--color-gray-100); 
+}
+
+.limit-form {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.limit-input {
+  width: 100%;
+  padding: var(--space-md);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius);
+  font-family: var(--font-main);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
+
+.error-text {
+  color: var(--color-error);
 }
 
 @keyframes slideUp {

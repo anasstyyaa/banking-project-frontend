@@ -32,6 +32,43 @@
         </div>
       </div>
 
+      <form class="employee-transfer-form" @submit.prevent="submitEmployeeTransfer">
+        <div class="transfer-grid">
+          <label class="field">
+            <AppText size="sm" weight="bold">From checking account</AppText>
+            <select v-model="transferForm.fromIban" class="select">
+              <option value="">Select source account</option>
+              <option v-for="account in checkingAccounts" :key="account.iban" :value="account.iban">
+                {{ account.customerName }} - {{ account.iban }}
+              </option>
+            </select>
+          </label>
+
+          <label class="field">
+            <AppText size="sm" weight="bold">To checking account</AppText>
+            <select v-model="transferForm.toIban" class="select">
+              <option value="">Select destination account</option>
+              <option v-for="account in destinationAccounts" :key="account.iban" :value="account.iban">
+                {{ account.customerName }} - {{ account.iban }}
+              </option>
+            </select>
+          </label>
+
+          <label class="field">
+            <AppText size="sm" weight="bold">Amount</AppText>
+            <input v-model="transferForm.amount" class="select" type="number" min="0.01" step="0.01" />
+          </label>
+        </div>
+
+        <div class="transfer-actions">
+          <AppText v-if="transferError" size="sm" class="message error">{{ transferError }}</AppText>
+          <AppText v-if="transferSuccess" size="sm" class="message success">{{ transferSuccess }}</AppText>
+          <AppButton type="submit" variant="primary" size="sm" :loading="isSubmittingTransfer">
+            Transfer funds
+          </AppButton>
+        </div>
+      </form>
+
       <!-- Filter by Customer: customer selector -->
       <div v-if="activeTab === 'customer'" class="customer-selector-section">
         <div v-if="filteredCustomers.length > 0 && !selectedCustomer" class="customer-list">
@@ -125,6 +162,7 @@ import SearchInput from '@/components/molecules/SearchInput/SearchInput.vue';
 import AppText from '@/components/atoms/Text/Text.vue';
 import AppBadge from '@/components/atoms/Badge/Badge.vue';
 import AppIcon from '@/components/atoms/AppIcon/AppIcon.vue';
+import AppButton from '@/components/atoms/Button/Button.vue';
 import AuthService from '@/services/auth.service';
 import TransactionService from '@/services/transaction.service';
 import EmployeeService from '@/services/employee.service';
@@ -135,8 +173,17 @@ const activeTab = ref('all');
 const allTransactions = ref([]);
 const customerTransactions = ref([]);
 const allCustomers = ref([]);
+const allAccounts = ref([]);
+const allTotalRows = ref(0);
+const customerTotalRows = ref(0);
+const allTotalPages = ref(1);
+const customerTotalPages = ref(1);
 const selectedCustomer = ref(null);
 const customerSearchQuery = ref('');
+const isSubmittingTransfer = ref(false);
+const transferError = ref('');
+const transferSuccess = ref('');
+const transferForm = ref({ fromIban: '', toIban: '', amount: '' });
 
 const ITEMS_PER_PAGE = 10;
 const allPage = ref(1);
@@ -154,13 +201,10 @@ const activeTransactions = computed(() =>
   activeTab.value === 'all' ? allTransactions.value : customerTransactions.value
 );
 
-const paginatedTransactions = computed(() => {
-  const start = (currentPage.value - 1) * ITEMS_PER_PAGE;
-  return activeTransactions.value.slice(start, start + ITEMS_PER_PAGE);
-});
+const paginatedTransactions = computed(() => activeTransactions.value);
 
-const totalRows = computed(() => activeTransactions.value.length);
-const totalPages = computed(() => Math.ceil(totalRows.value / ITEMS_PER_PAGE) || 1);
+const totalRows = computed(() => activeTab.value === 'all' ? allTotalRows.value : customerTotalRows.value);
+const totalPages = computed(() => activeTab.value === 'all' ? allTotalPages.value : customerTotalPages.value);
 const rowRangeStart = computed(() => totalRows.value === 0 ? 0 : (currentPage.value - 1) * ITEMS_PER_PAGE + 1);
 const rowRangeEnd = computed(() => Math.min(currentPage.value * ITEMS_PER_PAGE, totalRows.value));
 
@@ -173,10 +217,20 @@ const filteredCustomers = computed(() => {
   );
 });
 
+const checkingAccounts = computed(() =>
+  allAccounts.value.filter((account) => account.type === 'CHECKING')
+);
+
+const destinationAccounts = computed(() =>
+  checkingAccounts.value.filter((account) => account.iban !== transferForm.value.fromIban)
+);
+
 const fetchAllTransactions = async () => {
   try {
-    const res = await TransactionService.getTransactions({});
-    allTransactions.value = res.data;
+    const res = await TransactionService.getTransactions({ page: allPage.value - 1, size: ITEMS_PER_PAGE });
+    allTransactions.value = res.data.content ?? res.data;
+    allTotalRows.value = res.data.totalElements ?? allTransactions.value.length;
+    allTotalPages.value = res.data.totalPages ?? 1;
   } catch (err) {
     console.error('Failed to load transactions:', err);
   }
@@ -184,10 +238,49 @@ const fetchAllTransactions = async () => {
 
 const fetchCustomerTransactions = async (userId) => {
   try {
-    const res = await TransactionService.getTransactions({ userId });
-    customerTransactions.value = res.data;
+    const res = await TransactionService.getTransactions({ userId, page: customerPage.value - 1, size: ITEMS_PER_PAGE });
+    customerTransactions.value = res.data.content ?? res.data;
+    customerTotalRows.value = res.data.totalElements ?? customerTransactions.value.length;
+    customerTotalPages.value = res.data.totalPages ?? 1;
   } catch (err) {
     console.error('Failed to load customer transactions:', err);
+  }
+};
+
+const fetchAccounts = async () => {
+  try {
+    const res = await EmployeeService.getAllSystemAccounts({ page: 0, size: 100 });
+    allAccounts.value = res.data.content ?? res.data;
+  } catch (err) {
+    console.error('Failed to load accounts:', err);
+  }
+};
+
+const submitEmployeeTransfer = async () => {
+  transferError.value = '';
+  transferSuccess.value = '';
+
+  if (!transferForm.value.fromIban || !transferForm.value.toIban || Number(transferForm.value.amount) <= 0) {
+    transferError.value = 'Select two checking accounts and enter an amount above zero.';
+    return;
+  }
+
+  isSubmittingTransfer.value = true;
+  try {
+    await TransactionService.createTransaction({
+      type: 'TRANSFER',
+      fromIban: transferForm.value.fromIban,
+      toIban: transferForm.value.toIban,
+      amount: Number(transferForm.value.amount)
+    });
+    transferSuccess.value = 'Transfer saved.';
+    transferForm.value = { fromIban: '', toIban: '', amount: '' };
+    allPage.value = 1;
+    await Promise.all([fetchAllTransactions(), fetchAccounts()]);
+  } catch (err) {
+    transferError.value = err.response?.data?.message || 'Transfer failed.';
+  } finally {
+    isSubmittingTransfer.value = false;
   }
 };
 
@@ -201,6 +294,8 @@ const selectCustomer = async (customer) => {
 const clearCustomer = () => {
   selectedCustomer.value = null;
   customerTransactions.value = [];
+  customerTotalRows.value = 0;
+  customerTotalPages.value = 1;
   customerPage.value = 1;
 };
 
@@ -231,8 +326,18 @@ watch(customerSearchQuery, () => {
   customerPage.value = 1;
 });
 
+watch(allPage, () => {
+  if (activeTab.value === 'all') fetchAllTransactions();
+});
+
+watch(customerPage, () => {
+  if (activeTab.value === 'customer' && selectedCustomer.value) {
+    fetchCustomerTransactions(selectedCustomer.value.id);
+  }
+});
+
 onMounted(async () => {
-  await fetchAllTransactions();
+  await Promise.all([fetchAllTransactions(), fetchAccounts()]);
   try {
     const res = await EmployeeService.getActiveCustomers();
     allCustomers.value = res.data;
@@ -277,6 +382,60 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+}
+
+.employee-transfer-form {
+  background: var(--color-white);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.transfer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.select {
+  width: 100%;
+  padding: var(--space-md);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius);
+  background: var(--color-white);
+  font-family: var(--font-main);
+}
+
+.transfer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
+
+.message {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius);
+}
+
+.error {
+  color: var(--color-error);
+  background: rgba(211, 47, 47, 0.08);
+}
+
+.success {
+  color: var(--color-success);
+  background: rgba(46, 125, 50, 0.08);
 }
 
 .customer-selector-section {
@@ -391,5 +550,16 @@ onMounted(async () => {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+  .transfer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .transfer-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }
 </style>
