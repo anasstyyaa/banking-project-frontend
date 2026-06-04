@@ -178,6 +178,8 @@ const userSearchQuery = ref('');
 const showModal = ref(false);
 const selectedUser = ref(null);
 const allAccountsList = ref([]); 
+const totalRows = ref(0);
+const totalPages = ref(1);
 const editingAccount = ref(null);
 const isUpdatingLimits = ref(false);
 const limitError = ref('');
@@ -189,8 +191,10 @@ const currentPage = ref(1);
 
 const fetchAccountsLedger = async () => {
   try {
-    const res = await EmployeeService.getAllSystemAccounts(); 
-    allAccountsList.value = res.data;
+    const res = await EmployeeService.getAllSystemAccounts({ page: currentPage.value - 1, size: ITEMS_PER_PAGE }); 
+    allAccountsList.value = res.data.content ?? res.data;
+    totalRows.value = res.data.totalElements ?? allAccountsList.value.length;
+    totalPages.value = res.data.totalPages ?? 1;
   } catch (err) {
     console.error("Ledger acquisition pipeline block:", err);
   }
@@ -206,14 +210,10 @@ const filteredAccounts = computed(() => {
 
 
 const paginatedAccounts = computed(() => {
-  const startIndex = (currentPage.value - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  return filteredAccounts.value.slice(startIndex, endIndex);
+  return filteredAccounts.value;
 });
 
 
-const totalRows = computed(() => filteredAccounts.value.length);
-const totalPages = computed(() => Math.ceil(totalRows.value / ITEMS_PER_PAGE) || 1);
 const rowRangeStart = computed(() => (totalRows.value === 0 ? 0 : (currentPage.value - 1) * ITEMS_PER_PAGE + 1));
 const rowRangeEnd = computed(() => Math.min(currentPage.value * ITEMS_PER_PAGE, totalRows.value));
 
@@ -294,6 +294,8 @@ const handleLogout = async () => {
 watch(searchQuery, () => {
   currentPage.value = 1;
 });
+
+watch(currentPage, fetchAccountsLedger);
 
 onMounted(() => {
   employeeStore.fetchData(); 

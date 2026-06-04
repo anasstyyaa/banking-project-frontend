@@ -174,6 +174,10 @@ const allTransactions = ref([]);
 const customerTransactions = ref([]);
 const allCustomers = ref([]);
 const allAccounts = ref([]);
+const allTotalRows = ref(0);
+const customerTotalRows = ref(0);
+const allTotalPages = ref(1);
+const customerTotalPages = ref(1);
 const selectedCustomer = ref(null);
 const customerSearchQuery = ref('');
 const isSubmittingTransfer = ref(false);
@@ -197,13 +201,10 @@ const activeTransactions = computed(() =>
   activeTab.value === 'all' ? allTransactions.value : customerTransactions.value
 );
 
-const paginatedTransactions = computed(() => {
-  const start = (currentPage.value - 1) * ITEMS_PER_PAGE;
-  return activeTransactions.value.slice(start, start + ITEMS_PER_PAGE);
-});
+const paginatedTransactions = computed(() => activeTransactions.value);
 
-const totalRows = computed(() => activeTransactions.value.length);
-const totalPages = computed(() => Math.ceil(totalRows.value / ITEMS_PER_PAGE) || 1);
+const totalRows = computed(() => activeTab.value === 'all' ? allTotalRows.value : customerTotalRows.value);
+const totalPages = computed(() => activeTab.value === 'all' ? allTotalPages.value : customerTotalPages.value);
 const rowRangeStart = computed(() => totalRows.value === 0 ? 0 : (currentPage.value - 1) * ITEMS_PER_PAGE + 1);
 const rowRangeEnd = computed(() => Math.min(currentPage.value * ITEMS_PER_PAGE, totalRows.value));
 
@@ -226,8 +227,10 @@ const destinationAccounts = computed(() =>
 
 const fetchAllTransactions = async () => {
   try {
-    const res = await TransactionService.getTransactions({});
-    allTransactions.value = res.data;
+    const res = await TransactionService.getTransactions({ page: allPage.value - 1, size: ITEMS_PER_PAGE });
+    allTransactions.value = res.data.content ?? res.data;
+    allTotalRows.value = res.data.totalElements ?? allTransactions.value.length;
+    allTotalPages.value = res.data.totalPages ?? 1;
   } catch (err) {
     console.error('Failed to load transactions:', err);
   }
@@ -235,8 +238,10 @@ const fetchAllTransactions = async () => {
 
 const fetchCustomerTransactions = async (userId) => {
   try {
-    const res = await TransactionService.getTransactions({ userId });
-    customerTransactions.value = res.data;
+    const res = await TransactionService.getTransactions({ userId, page: customerPage.value - 1, size: ITEMS_PER_PAGE });
+    customerTransactions.value = res.data.content ?? res.data;
+    customerTotalRows.value = res.data.totalElements ?? customerTransactions.value.length;
+    customerTotalPages.value = res.data.totalPages ?? 1;
   } catch (err) {
     console.error('Failed to load customer transactions:', err);
   }
@@ -244,8 +249,8 @@ const fetchCustomerTransactions = async (userId) => {
 
 const fetchAccounts = async () => {
   try {
-    const res = await EmployeeService.getAllSystemAccounts();
-    allAccounts.value = res.data;
+    const res = await EmployeeService.getAllSystemAccounts({ page: 0, size: 100 });
+    allAccounts.value = res.data.content ?? res.data;
   } catch (err) {
     console.error('Failed to load accounts:', err);
   }
@@ -270,6 +275,7 @@ const submitEmployeeTransfer = async () => {
     });
     transferSuccess.value = 'Transfer saved.';
     transferForm.value = { fromIban: '', toIban: '', amount: '' };
+    allPage.value = 1;
     await Promise.all([fetchAllTransactions(), fetchAccounts()]);
   } catch (err) {
     transferError.value = err.response?.data?.message || 'Transfer failed.';
@@ -288,6 +294,8 @@ const selectCustomer = async (customer) => {
 const clearCustomer = () => {
   selectedCustomer.value = null;
   customerTransactions.value = [];
+  customerTotalRows.value = 0;
+  customerTotalPages.value = 1;
   customerPage.value = 1;
 };
 
@@ -316,6 +324,16 @@ const handleLogout = async () => {
 
 watch(customerSearchQuery, () => {
   customerPage.value = 1;
+});
+
+watch(allPage, () => {
+  if (activeTab.value === 'all') fetchAllTransactions();
+});
+
+watch(customerPage, () => {
+  if (activeTab.value === 'customer' && selectedCustomer.value) {
+    fetchCustomerTransactions(selectedCustomer.value.id);
+  }
 });
 
 onMounted(async () => {

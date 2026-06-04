@@ -9,8 +9,8 @@ class EmployeeService {
     return api.get('/employee/customers'); 
   }
 
-  getAllSystemAccounts() {
-    return api.get('/accounts'); 
+  getAllSystemAccounts(params = {}) {
+    return api.get('/accounts', { params }); 
   }
 
   approveUser(userId) {
@@ -22,7 +22,7 @@ class EmployeeService {
   }
 
   createCustomerAccount(userId, payload) {
-    return api.post(`/employee/customers/${userId}/accounts`, payload);
+    return api.post('/accounts', { customerUserId: userId, ...payload });
   }
 }
 

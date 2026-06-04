@@ -33,7 +33,7 @@ const success = ref('');
 const loadAccounts = async () => {
   try {
     const response = await AccountService.getAccounts();
-    accounts.value = response.data;
+    accounts.value = response.data.content ?? response.data;
   } catch (err) {
     error.value = err.response?.data?.message || 'Accounts could not be loaded.';
   }
