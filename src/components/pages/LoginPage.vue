@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue'; 
 import { useRouter } from 'vue-router';
 import AuthLayout from '@/components/templates/AuthLayout/AuthLayout.vue';
 import AuthForm from '@/components/organisms/AuthForm/AuthForm.vue';
@@ -54,6 +54,15 @@ const loginData = reactive({
 const errors = reactive({
   email: '',
   password: ''
+});
+
+onMounted(async () => {
+  try {
+    await api.get('/auth/csrf'); 
+    console.log("CSRF cookie initialized successfully");
+  } catch (error) {
+    console.error("Failed to initialize security session:", error);
+  }
 });
 
 const handleLogin = async () => {
@@ -87,13 +96,19 @@ const handleLogin = async () => {
       }
     }
   } catch (err) {
+    console.error("Full Login Error Context:", err.response); 
+    console.log("RAW error data:", JSON.stringify(err.response?.data));
+    
     const statusCode = err.response?.status;
     const backendMessage = err.response?.data?.message || err.response?.data?.reason || '';
 
-    if (statusCode === 403 || backendMessage.includes('ACCOUNT_PENDING_APPROVAL')) {
+    // If the backend explicitly says the account is pending, route them out.
+    if (backendMessage.includes('ACCOUNT_PENDING_APPROVAL')) {
       logPendingAttempt(loginData.email);
-      
       router.push('/pending-approval');
+    } 
+    else if (statusCode === 403) {
+      errors.email = "Security Block: Check backend CORS or CSRF token setups.";
     } else if (statusCode === 401) {
       errors.email = "Invalid email address or password configuration.";
     } else {
