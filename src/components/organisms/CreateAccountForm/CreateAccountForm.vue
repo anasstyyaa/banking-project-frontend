@@ -28,6 +28,20 @@
           </AppText>
         </transition>
       </div>
+
+      <FormField
+        label="Absolute limit"
+        type="number"
+        v-model="form.absoluteLimit"
+        placeholder="-500.00"
+      />
+
+      <FormField
+        label="Daily transfer limit"
+        type="number"
+        v-model="form.dailyLimit"
+        placeholder="1000.00"
+      />
     </div>
 
     <div class="form-actions">
@@ -54,10 +68,11 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { reactive, ref } from 'vue';
 import AppText from '@/components/atoms/Text/Text.vue';
 import AppSelect from '@/components/atoms/Select/Select.vue';
 import AppButton from '@/components/atoms/Button/Button.vue';
+import FormField from '@/components/molecules/FormField/FormField.vue';
 
 const props = defineProps({
   customerName: { type: String, required: true },
@@ -68,6 +83,10 @@ const emit = defineEmits(['submit', 'cancel']);
 
 const selectedType = ref('');
 const validationError = ref('');
+const form = reactive({
+  absoluteLimit: '-500.00',
+  dailyLimit: '1000.00'
+});
 
 const accountOptions = [
   { value: 'CHECKING', label: 'Payment / Checking Account' },
@@ -79,9 +98,18 @@ const handleSubmit = () => {
     validationError.value = 'You must select an account type before submission.';
     return;
   }
+
+  if (form.absoluteLimit === '' || form.dailyLimit === '' || Number(form.dailyLimit) <= 0) {
+    validationError.value = 'Enter a daily limit above zero and a valid absolute limit.';
+    return;
+  }
   
   validationError.value = '';
-  emit('submit', selectedType.value);
+  emit('submit', {
+    accountType: selectedType.value,
+    absoluteLimit: Number(form.absoluteLimit),
+    dailyLimit: Number(form.dailyLimit)
+  });
 };
 </script>
 

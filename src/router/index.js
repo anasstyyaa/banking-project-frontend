@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHashHistory } from "vue-router"; // 🔴 UPDATED
 import LoginPage from "@/components/pages/LoginPage.vue";
 import RegisterPage from "@/components/pages/RegisterPage.vue";
 import EmployeeDashboardPage from "@/components/pages/EmployeeDashboardPage.vue";
@@ -13,7 +13,7 @@ import SearchPage from "@/components/pages/SearchPage.vue";
 import EmployeeTransactionsPage from "@/components/pages/EmployeeTransactionsPage.vue";
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     { path: "/", redirect: "/login" },
     {

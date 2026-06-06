@@ -10,8 +10,8 @@
       >
         <template #fields>
           <div class="form-row">
-            <FormField label="First Name" v-model="regData.firstName" placeholder="John" />
-            <FormField label="Last Name" v-model="regData.lastName" placeholder="Doe" />
+            <FormField label="First Name" v-model="regData.firstName" placeholder="John" :error="errors.firstName"/>
+            <FormField label="Last Name" v-model="regData.lastName" placeholder="Doe" :error="errors.lastName"/>
           </div>
 
           <FormField 
@@ -27,7 +27,7 @@
             :error="errors.phoneNumber" 
           />
 
-          <FormField label="BSN (Burgerservicenummer)" v-model="regData.bsn" placeholder="123456789" />
+          <FormField label="BSN (Burgerservicenummer)" v-model="regData.bsn" placeholder="123456789" :error="errors.bsn"/>
           <FormField 
             label="Password" 
             type="password" 
@@ -101,7 +101,6 @@ const validate = () => {
 
   return isValid;
 };
-
 const handleRegister = async () => {
   Object.keys(errors).forEach(key => errors[key] = '');
 
@@ -124,14 +123,33 @@ const handleRegister = async () => {
     router.push('/pending-approval');
 
   } catch (err) {
+    console.error("Registration submission failed:", err);
+
     if (err.response?.status === 409) {
       errors.email = "This email is already registered. Please use another or login.";
     } 
-    else if (err.response?.data?.errors) {
-      Object.assign(errors, err.response.data.errors);
+    else if (err.response?.data?.message) {
+      const globalMessage = err.response.data.message;
+      const validationRules = globalMessage.split('; ');
+
+      validationRules.forEach(rule => {
+        const colonIndex = rule.indexOf(':');
+        if (colonIndex !== -1) {
+          const fieldName = rule.substring(0, colonIndex).trim();
+          const errorMessage = rule.substring(colonIndex + 1).trim();
+
+          if (Object.hasOwn(errors, fieldName)) {
+            errors[fieldName] = errorMessage;
+          }
+        }
+      });
+
+      if (!Object.values(errors).some(msg => msg !== '')) {
+        errors.email = globalMessage;
+      }
     } 
     else {
-      errors.email = "An error occurred during registration.";
+      errors.email = "An unexpected error occurred during registration.";
     }
   } finally {
     isLoading.value = false;

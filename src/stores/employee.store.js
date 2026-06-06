@@ -53,14 +53,14 @@ export const useEmployeeStore = defineStore("employee", {
         console.error("Error during employee deny execution process:", err);
       }
     },
-    async createCustomerAccount(userId, accountType) {
+    async createCustomerAccount(userId, payload) {
       if (this.isCreatingAccount) return;
       this.isCreatingAccount = true;
 
       try {
         const response = await EmployeeService.createCustomerAccount(
           userId,
-          accountType,
+          payload,
         );
         return response.data;
       } catch (err) {

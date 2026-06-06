@@ -31,10 +31,10 @@ const loadDashboard = async () => {
   try {
     const [accountResponse, transactionResponse] = await Promise.all([
       AccountService.getAccounts(),
-      TransactionService.getTransactions()
+      TransactionService.getTransactions({ page: 0, size: 5 })
     ]);
-    accounts.value = accountResponse.data;
-    transactions.value = transactionResponse.data;
+    accounts.value = accountResponse.data.content ?? accountResponse.data;
+    transactions.value = transactionResponse.data.content ?? transactionResponse.data;
   } catch (err) {
     error.value = err.response?.data?.message || 'Dashboard could not be loaded.';
   }
