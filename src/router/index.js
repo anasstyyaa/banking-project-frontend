@@ -3,6 +3,7 @@ import LoginPage from "@/components/pages/LoginPage.vue";
 import RegisterPage from "@/components/pages/RegisterPage.vue";
 import EmployeeDashboardPage from "@/components/pages/EmployeeDashboardPage.vue";
 import DashboardPage from "@/components/pages/DashboardPage.vue";
+import CustomerProfilePage from "@/components/pages/CustomerProfilePage.vue";
 import TransactionsPage from "@/components/pages/TransactionsPage.vue";
 import TransferPage from "@/components/pages/TransferPage.vue";
 import AtmPage from "@/components/pages/AtmPage.vue";
@@ -47,6 +48,11 @@ const router = createRouter({
     {
       path: "/dashboard",
       component: DashboardPage,
+      meta: { requiresAuth: true, role: "ROLE_CUSTOMER" },
+    },
+    {
+      path: "/profile",
+      component: CustomerProfilePage,
       meta: { requiresAuth: true, role: "ROLE_CUSTOMER" },
     },
     {

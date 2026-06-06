@@ -12,7 +12,24 @@
       </select>
     </label>
 
-    <FormField label="To IBAN" v-model="form.toIban" placeholder="NL01INHO000000003" />
+    
+  <AppText size="sm" weight="bold">To account</AppText>
+
+  <select v-model="form.toIban" class="select">
+    <option value="">Own account</option>
+    <option v-for="account in destinationAccounts" :key="account.iban" :value="account.iban">
+      {{ account.type }} - {{ account.iban }}
+    </option>
+  </select>
+
+    <input
+      v-model="form.externalToIban"
+      class="select"
+      placeholder="NL01INHO000000003"
+      :disabled="!!form.toIban"
+    />
+    
+
     <FormField label="Amount" type="number" v-model="form.amount" placeholder="0.00" />
 
     <AppText v-if="error" size="sm" class="message error">{{ error }}</AppText>
@@ -23,12 +40,12 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import AppButton from '@/components/atoms/Button/Button.vue';
 import AppText from '@/components/atoms/Text/Text.vue';
 import FormField from '@/components/molecules/FormField/FormField.vue';
 
-defineProps({
+const props = defineProps({
   accounts: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
   error: { type: String, default: '' },
@@ -36,13 +53,41 @@ defineProps({
 });
 
 const emit = defineEmits(['submit']);
-const form = reactive({ fromIban: '', toIban: '', amount: '' });
+
+const form = reactive({
+  fromIban: '',
+  toIban: '',
+  externalToIban: '',
+  amount: ''
+});
+
+const destinationAccounts = computed(() => {
+  return props.accounts.filter((account) => account.iban !== form.fromIban);
+});
+
+watch(
+  () => form.fromIban,
+  () => {
+    if (form.fromIban === form.toIban) {
+      form.toIban = '';
+    }
+  }
+);
+
+watch(
+  () => form.toIban,
+  () => {
+    if (form.toIban) {
+      form.externalToIban = '';
+    }
+  }
+);
 
 const submitTransfer = () => {
   emit('submit', {
     type: 'TRANSFER',
     fromIban: form.fromIban,
-    toIban: form.toIban,
+    toIban: form.toIban || form.externalToIban,
     amount: Number(form.amount)
   });
 };
@@ -66,6 +111,12 @@ const submitTransfer = () => {
   gap: var(--space-xs);
 }
 
+.destination-box {
+  border: 1px solid var(--color-primary);
+  border-radius: var(--border-radius);
+  padding: var(--space-md);
+}
+
 .select {
   width: 100%;
   padding: var(--space-md);
@@ -75,6 +126,11 @@ const submitTransfer = () => {
   color: var(--color-primary-dark);
   font-family: var(--font-main);
   font-size: 1rem;
+}
+
+.select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .message {

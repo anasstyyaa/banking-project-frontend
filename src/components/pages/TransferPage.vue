@@ -44,6 +44,10 @@ const submitTransfer = async (payload) => {
   error.value = '';
   success.value = '';
   try {
+    if (!payload.fromIban || !payload.toIban || !payload.amount) {
+      error.value = 'Select both accounts and enter an amount.';
+      return;
+    }
     await TransactionService.createTransaction(payload);
     success.value = 'Transfer completed.';
     await loadAccounts();
