@@ -77,12 +77,14 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import BankingLayout from '@/components/templates/BankingLayout/BankingLayout.vue';
 import AppButton from '@/components/atoms/Button/Button.vue';
 import AppText from '@/components/atoms/Text/Text.vue';
 import FormField from '@/components/molecules/FormField/FormField.vue';
 import UserService from '@/services/user.service';
 
+const router = useRouter();
 const profile = ref(null);
 const error = ref('');
 const message = ref('');
@@ -115,6 +117,9 @@ async function loadProfile() {
 async function saveProfile() {
   if (!isValid()) return;
 
+  const emailChanged = profile.value?.email !== form.email;
+  if (emailChanged && !confirmEmailChange()) return;
+
   saving.value = true;
   error.value = '';
   message.value = '';
@@ -124,8 +129,13 @@ async function saveProfile() {
       email: form.email,
       phoneNumber: form.phoneNumber
     });
+
+    if (emailChanged) {
+      logoutAfterEmailChange();
+      return;
+    }
+
     setProfile(response.data);
-    syncStoredEmail(response.data.email);
     message.value = 'Profile updated successfully.';
   } catch (err) {
     error.value = getErrorMessage(err, 'Profile could not be updated.');
@@ -151,11 +161,16 @@ function isValid() {
   return !formErrors.email && !formErrors.phoneNumber;
 }
 
-function syncStoredEmail(email) {
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (!user) return;
+function confirmEmailChange() {
+  return window.confirm(
+    'Changing your email will immediately log you out. You will need to log in again with the new email address. Do you want to continue?'
+  );
+}
 
-  localStorage.setItem('user', JSON.stringify({ ...user, email }));
+function logoutAfterEmailChange() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  router.push('/login');
 }
 
 function formatMoney(amount) {
