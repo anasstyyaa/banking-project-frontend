@@ -3,54 +3,38 @@ import EmployeeService from "@/services/employee.service";
 
 export const useEmployeeStore = defineStore("employee", {
   state: () => ({
-    pendingUsers: [],
-    activeUsers: [],
+    pending: { items: [], totalElements: 0, totalPages: 1 },
+    active: { items: [], totalElements: 0, totalPages: 1 },
     isLoading: false,
     isProcessingApproval: false,
     isCreatingAccount: false,
   }),
 
   actions: {
-    async fetchData() {
-      if (this.isLoading) return;
+    async fetchPending({ page = 0, size = 8, search = '' } = {}) {
       this.isLoading = true;
       try {
-        const [pendingRes, activeRes] = await Promise.all([
-          EmployeeService.getPendingRegistrations(),
-          EmployeeService.getActiveCustomers(),
-        ]);
-        this.pendingUsers = pendingRes.data;
-        this.activeUsers = activeRes.data;
-      } catch (err) {
-        console.error("Failed to sync employee store lists:", err);
-      } finally {
-        this.isLoading = false;
-      }
+        const res = await EmployeeService.getRegistrations('PENDING', { page, size, search });
+        this.pending = { items: res.data.content, totalElements: res.data.totalElements, totalPages: res.data.totalPages };
+      } finally { this.isLoading = false; }
     },
 
-    async approveUser(userId) {
-      if (this.isProcessingApproval) {
-        console.warn("Blocked a duplicate approveUser trigger for ID:", userId);
-        return;
-      }
+    async fetchActive({ page = 0, size = 8, search = '' } = {}) {
+      this.isLoading = true;
+      try {
+        const res = await EmployeeService.getRegistrations('APPROVED', { page, size, search });
+        this.active = { items: res.data.content, totalElements: res.data.totalElements, totalPages: res.data.totalPages };
+      } finally { this.isLoading = false; }
+    },
 
+    async updateRegistrationStatus(id, payload, refresh) {
+      if (this.isProcessingApproval) return;
       this.isProcessingApproval = true;
       try {
-        await EmployeeService.approveUser(userId);
-        await this.fetchData();
-      } catch (err) {
-        console.error("Error during employee approval execution process:", err);
+        await EmployeeService.updateRegistrationStatus(id, payload);
+        if (refresh) await refresh();
       } finally {
         this.isProcessingApproval = false;
-      }
-    },
-
-    async denyUser(userId) {
-      try {
-        await EmployeeService.denyUser(userId);
-        await this.fetchData();
-      } catch (err) {
-        console.error("Error during employee deny execution process:", err);
       }
     },
     async createCustomerAccount(userId, payload) {

@@ -59,6 +59,14 @@
                   <AppButton variant="ghost" size="sm" @click="openLimitEditor(account)">
                     Edit limits
                   </AppButton>
+                  <AppButton
+                    variant="ghost"
+                    size="sm"
+                    :disabled="account.balance != 0"
+                    @click="closeAccount(account)"
+                  >
+                    Close account
+                  </AppButton>
                 </td>
               </tr>
             </tbody>
@@ -219,8 +227,9 @@ const rowRangeEnd = computed(() => Math.min(currentPage.value * ITEMS_PER_PAGE, 
 
 const filteredActiveUsers = computed(() => {
   const term = userSearchQuery.value.toLowerCase().trim();
-  if (!term) return employeeStore.activeUsers;
-  return employeeStore.activeUsers.filter(u => 
+  const users = employeeStore.active.items;
+  if (!term) return users;
+  return users.filter(u =>
     u.firstName?.toLowerCase().includes(term) || u.lastName?.toLowerCase().includes(term)
   );
 });
@@ -283,6 +292,16 @@ const submitLimitUpdate = async () => {
   }
 };
 
+const closeAccount = async (account) => {
+  if (!confirm(`Close account ${account.iban}? This cannot be undone.`)) return;
+  try {
+    await AccountService.closeAccount(account.iban);
+    await fetchAccountsLedger();
+  } catch (err) {
+    alert(err.response?.data?.message || 'Failed to close account.');
+  }
+};
+
 const formatMoney = (value) => `EUR ${Number(value).toFixed(2)}`;
 
 const handleLogout = async () => {
@@ -298,7 +317,7 @@ watch(searchQuery, () => {
 watch(currentPage, fetchAccountsLedger);
 
 onMounted(() => {
-  employeeStore.fetchData(); 
+  employeeStore.fetchActive({ page: 0, size: 100 });
   fetchAccountsLedger();
 });
 </script>

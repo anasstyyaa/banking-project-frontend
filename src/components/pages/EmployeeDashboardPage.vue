@@ -12,15 +12,15 @@
       <div class="tabs-container">
         <button :class="['tab-btn', { active: activeTab === 'pending' }]" @click="activeTab = 'pending'">
           <AppText weight="bold">Pending Requests</AppText>
-          <AppBadge v-if="employeeStore.pendingUsers.length" type="warning">
-            {{ employeeStore.pendingUsers.length }}
-          </AppBadge>
+          <AppBadge v-if="employeeStore.pending.totalElements" type="warning">
+          {{ employeeStore.pending.totalElements }}
+        </AppBadge>
         </button>
 
         <button :class="['tab-btn', { active: activeTab === 'active' }]" @click="activeTab = 'active'">
           <AppText weight="bold">Active Customers</AppText>
-          <AppBadge v-if="employeeStore.activeUsers.length" type="info">
-            {{ employeeStore.activeUsers.length }}
+          <AppBadge v-if="employeeStore.active.totalElements" type="info">
+            {{ employeeStore.active.totalElements }}
           </AppBadge>
         </button>
       </div>
@@ -33,7 +33,7 @@
 
       <div class="table-section" :key="activeTab">
         <RegistrationTable 
-          :users="paginatedUsers" 
+          :users="tableUsers" 
           :is-read-only="activeTab === 'active'"
           @approve="handleApprove"
           @deny="handleDeny"
@@ -68,23 +68,15 @@ import AppBadge from '@/components/atoms/Badge/Badge.vue';
 import DashboardLayout from '@/components/templates/EmployeeDashboardLayout/EmployeeDashboardLayout.vue';
 import EmployeeService from '@/services/employee.service';
 import AuthService from '@/services/auth.service';
-
 const router = useRouter();
 const employeeStore = useEmployeeStore();
 
-const activeTab = ref('pending'); 
-
-
-const pendingUsers = ref([]);
-const activeUsers = ref([]);
+const activeTab = ref('pending');
 const searchQuery = ref('');
-const isLoading = ref(false);
 
-
-const ITEMS_PER_PAGE = 8; 
+const PAGE_SIZE = 8;
 const pendingPage = ref(1);
 const activePage = ref(1);
-
 
 const currentPage = computed({
   get: () => (activeTab.value === 'pending' ? pendingPage.value : activePage.value),
@@ -98,58 +90,56 @@ const currentPage = computed({
 });
 
 const searchPlaceholder = computed(() => {
-  return activeTab.value === 'pending' 
-    ? "Search requests by name or BSN..." 
+  return activeTab.value === 'pending'
+    ? "Search requests by name or BSN..."
     : "Search customers by name, BSN, or IBAN...";
 });
 
+const activeList = computed(() => (activeTab.value === 'pending' ? employeeStore.pending : employeeStore.active));
 
-const filteredUsers = computed(() => {
-  const term = searchQuery.value.toLowerCase().trim();
-  const targetDataset = activeTab.value === 'pending' ? employeeStore.pendingUsers : employeeStore.activeUsers;
+const tableUsers = computed(() => activeList.value.items);
 
-  if (!term) return targetDataset;
+const totalRows = computed(() => activeList.value.totalElements);
+const totalPages = computed(() => activeList.value.totalPages || 1);
 
-  return targetDataset.filter(user => {
-    return (user.firstName?.toLowerCase().includes(term)) || 
-           (user.lastName?.toLowerCase().includes(term)) ||
-           (user.bsn?.includes(term)) ||
-           (user.iban?.toLowerCase().includes(term));
-  });
-});
+const rowRangeStart = computed(() => (totalRows.value === 0 ? 0 : (currentPage.value - 1) * PAGE_SIZE + 1));
+const rowRangeEnd = computed(() => Math.min(currentPage.value * PAGE_SIZE, totalRows.value));
 
-
-const paginatedUsers = computed(() => {
-  const startIndex = (currentPage.value - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  return filteredUsers.value.slice(startIndex, endIndex);
-});
-
-
-const totalRows = computed(() => filteredUsers.value.length);
-const totalPages = computed(() => Math.ceil(totalRows.value / ITEMS_PER_PAGE) || 1);
-
-const rowRangeStart = computed(() => (totalRows.value === 0 ? 0 : (currentPage.value - 1) * ITEMS_PER_PAGE + 1));
-const rowRangeEnd = computed(() => Math.min(currentPage.value * ITEMS_PER_PAGE, totalRows.value));
+const fetchActiveTab = async () => {
+  const params = { page: currentPage.value - 1, size: PAGE_SIZE, search: searchQuery.value.trim() };
+  if (activeTab.value === 'pending') {
+    await employeeStore.fetchPending(params);
+  } else {
+    await employeeStore.fetchActive(params);
+  }
+};
 
 const handleTabChange = (tabName) => {
   activeTab.value = tabName;
 };
 
-const handleApprove = async (id) => {
-  await employeeStore.approveUser(id);
+const handleApprove = async (id, limits = {}) => {
+  await employeeStore.updateRegistrationStatus(id, { status: 'APPROVED', ...limits }, fetchActiveTab);
 };
 
 const handleDeny = async (id) => {
   if (confirm("Reject this application? This deletes the registration record.")) {
-    await employeeStore.denyUser(id);
+    await employeeStore.updateRegistrationStatus(id, { status: 'DENIED' }, fetchActiveTab);
   }
 };
 
-watch(searchQuery, () => { currentPage.value = 1; });
+let searchDebounce;
+watch(searchQuery, () => {
+  currentPage.value = 1;
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(fetchActiveTab, 300);
+});
+
+watch(activeTab, () => { currentPage.value = 1; fetchActiveTab(); });
+watch(currentPage, fetchActiveTab);
 
 onMounted(() => {
-  employeeStore.fetchData();
+  fetchActiveTab();
 });
 
 const handleLogout = async () => {

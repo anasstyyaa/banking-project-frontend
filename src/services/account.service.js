@@ -17,6 +17,10 @@ class AccountService {
     return api.post('/accounts', payload);
   }
 
+  closeAccount(iban) {
+  return api.patch(`/accounts/${iban}/close`);
+}
+
   updateLimits(iban, payload) {
     return api.patch(`/accounts/${iban}/limits`, payload);
   }
