@@ -1,10 +1,5 @@
 import axios from 'axios';
-
-function getCookie(name) {
-  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
+import { getStoredCsrfToken, storeCsrfToken } from '@/utils/csrf';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1',
@@ -22,7 +17,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${user.token}`;
     }
 
-    const csrfToken = getCookie('XSRF-TOKEN');
+    const csrfToken = getStoredCsrfToken();
     if (csrfToken) {
       config.headers['X-XSRF-TOKEN'] = csrfToken;
     }
@@ -40,10 +35,10 @@ api.interceptors.response.use(
     if (response && response.status === 403 && config && !config._retriedAfterCsrfRefresh) {
       config._retriedAfterCsrfRefresh = true;
       try {
-        await api.get('/auth/csrf');
-        const freshToken = getCookie('XSRF-TOKEN');
-        if (freshToken) {
-          config.headers['X-XSRF-TOKEN'] = freshToken;
+        const { data } = await api.get('/auth/csrf');
+        storeCsrfToken(data.token);
+        if (data.token) {
+          config.headers['X-XSRF-TOKEN'] = data.token;
         }
         return api(config);
       } catch (refreshErr) {
