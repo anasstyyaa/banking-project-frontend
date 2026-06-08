@@ -32,4 +32,27 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const { config, response } = error;
+
+    if (response && response.status === 403 && config && !config._retriedAfterCsrfRefresh) {
+      config._retriedAfterCsrfRefresh = true;
+      try {
+        await api.get('/auth/csrf');
+        const freshToken = getCookie('XSRF-TOKEN');
+        if (freshToken) {
+          config.headers['X-XSRF-TOKEN'] = freshToken;
+        }
+        return api(config);
+      } catch (refreshErr) {
+        // fall through and reject with the original error
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export default api;

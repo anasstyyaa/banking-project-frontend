@@ -368,7 +368,7 @@ onMounted(() => {
   color: var(--color-error); 
 }
 
-/* --- Clean, Professional Empty Table State Design Styles --- */
+
 .empty-state-cell { 
   padding: var(--space-xl) 0; 
   text-align: center; 
@@ -390,12 +390,12 @@ onMounted(() => {
   margin-bottom: var(--space-xs);
 }
 
-/* --- Entrance Animation --- */
+
 .animated-table-section {
   animation: slideUp 0.3s ease-out;
 }
 
-/* --- Matching Reusable Pagination Footer Card Elements --- */
+
 .pagination-footer {
   display: flex;
   justify-content: space-between;
@@ -435,7 +435,7 @@ onMounted(() => {
   text-align: center;
 }
 
-/* --- Modal Layouts --- */
+
 .modal-overlay { 
   position: fixed; 
   top: 0; left: 0; 

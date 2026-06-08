@@ -35,7 +35,7 @@
         <RegistrationTable 
           :users="tableUsers" 
           :is-read-only="activeTab === 'active'"
-          @approve="handleApprove"
+          @approve="openApprovalModal"
           @deny="handleDeny"
         />
 
@@ -52,6 +52,35 @@
           </div>
         </div>
       </div>
+
+      <div v-if="approvingUser" class="modal-overlay" @click.self="closeApprovalModal">
+        <form class="modal-card limit-form" @submit.prevent="submitApproval">
+          <div class="modal-header">
+            <AppText tag="h3" size="lg" weight="bold">Approve Registration</AppText>
+            <AppText size="sm" muted>{{ approvingUser.firstName }} {{ approvingUser.lastName }}</AppText>
+          </div>
+
+          <AppText size="sm" muted>
+            Optionally set initial account limits. Leave blank to use the default values (absolute: -500, daily: 1000).
+          </AppText>
+
+          <label class="field">
+            <AppText size="sm" weight="bold">Absolute limit (optional)</AppText>
+            <input v-model="approvalLimitForm.absoluteLimit" class="limit-input" type="number" step="0.01" placeholder="-500.00" />
+          </label>
+          <label class="field">
+            <AppText size="sm" weight="bold">Daily transfer limit (optional)</AppText>
+            <input v-model="approvalLimitForm.dailyLimit" class="limit-input" type="number" step="0.01" min="0.01" placeholder="1000.00" />
+          </label>
+
+          <AppText v-if="approvalLimitError" size="sm" class="error-text">{{ approvalLimitError }}</AppText>
+
+          <div class="form-actions">
+            <AppButton type="button" variant="ghost" size="sm" :disabled="isApproving" @click="closeApprovalModal">Cancel</AppButton>
+            <AppButton type="submit" variant="primary" size="sm" :loading="isApproving">Approve</AppButton>
+          </div>
+        </form>
+      </div>
     </template>
   </DashboardLayout>
 </template>
@@ -67,12 +96,17 @@ import AppText from '@/components/atoms/Text/Text.vue';
 import AppBadge from '@/components/atoms/Badge/Badge.vue';
 import DashboardLayout from '@/components/templates/EmployeeDashboardLayout/EmployeeDashboardLayout.vue';
 import EmployeeService from '@/services/employee.service';
+import AppButton from '@/components/atoms/Button/Button.vue';
 import AuthService from '@/services/auth.service';
 const router = useRouter();
 const employeeStore = useEmployeeStore();
 
 const activeTab = ref('pending');
 const searchQuery = ref('');
+const approvingUser = ref(null);
+const approvalLimitForm = ref({ absoluteLimit: '', dailyLimit: '' });
+const approvalLimitError = ref('');
+const isApproving = ref(false);
 
 const PAGE_SIZE = 8;
 const pendingPage = ref(1);
@@ -118,8 +152,41 @@ const handleTabChange = (tabName) => {
   activeTab.value = tabName;
 };
 
-const handleApprove = async (id, limits = {}) => {
-  await employeeStore.updateRegistrationStatus(id, { status: 'APPROVED', ...limits }, fetchActiveTab);
+const openApprovalModal = (user) => {
+  approvingUser.value = user;
+  approvalLimitForm.value = { absoluteLimit: '', dailyLimit: '' };
+  approvalLimitError.value = '';
+};
+
+const closeApprovalModal = () => {
+  approvingUser.value = null;
+  approvalLimitError.value = '';
+};
+
+const submitApproval = async () => {
+  const { absoluteLimit, dailyLimit } = approvalLimitForm.value;
+  if (dailyLimit !== '' && Number(dailyLimit) <= 0) {
+    approvalLimitError.value = 'Daily limit must be greater than zero.';
+    return;
+  }
+
+  const limits = {};
+  if (absoluteLimit !== '') limits.absoluteLimit = Number(absoluteLimit);
+  if (dailyLimit !== '') limits.dailyLimit = Number(dailyLimit);
+
+  isApproving.value = true;
+  try {
+    await employeeStore.updateRegistrationStatus(
+      approvingUser.value.id,
+      { status: 'APPROVED', ...limits },
+      fetchActiveTab
+    );
+    closeApprovalModal();
+  } catch (err) {
+    approvalLimitError.value = err.response?.data?.message || 'Approval failed.';
+  } finally {
+    isApproving.value = false;
+  }
 };
 
 const handleDeny = async (id) => {
@@ -235,6 +302,59 @@ const handleLogout = async () => {
 .page-indicator {
   min-width: 100px;
   text-align: center;
+}
+
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-card {
+  background: var(--color-white);
+  border-radius: var(--border-radius);
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+.modal-header {
+  padding: var(--space-lg) var(--space-lg) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.limit-form {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.limit-input {
+  width: 100%;
+  padding: var(--space-md);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--border-radius);
+  font-family: var(--font-main);
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-md);
+}
+.error-text {
+  color: var(--color-error);
 }
 
 @keyframes slideUp {
