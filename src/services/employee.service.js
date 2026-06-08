@@ -3,11 +3,11 @@ import api from '@/api/axios';
 class EmployeeService {
   
   getRegistrations(status, params = {}) {
-    return api.get('/employee/registrations', { params: { status, ...params } });
+    return api.get('/users/registrations', { params: { status, ...params } });
   }
-
+  
   updateRegistrationStatus(id, payload) {
-    return api.patch(`/employee/registrations/${id}`, payload);
+    return api.patch(`/users/registrations/${id}`, payload);
   }
 
   getAllSystemAccounts(params = {}) {

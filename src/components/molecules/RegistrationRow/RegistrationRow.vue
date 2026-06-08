@@ -35,8 +35,7 @@
         <AppButton 
           variant="primary" 
           size="sm" 
-          @click="$emit('approve', user.id)"
-        >
+          @click="$emit('approve', user)">
           Approve
         </AppButton>
         <AppButton 
