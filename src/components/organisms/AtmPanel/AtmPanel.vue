@@ -2,7 +2,7 @@
   <form class="atm-panel" @submit.prevent="submitAtmTransaction">
     <div class="heading">
       <AppText tag="h2" size="lg" weight="bold">ATM</AppText>
-      <AppText size="sm" muted>Uses the same secure login token as the app.</AppText>
+      <AppText size="sm" muted>{{ customerEmail }}</AppText>
     </div>
 
     <div class="mode-toggle">
@@ -41,7 +41,8 @@ defineProps({
   accounts: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
   error: { type: String, default: '' },
-  success: { type: String, default: '' }
+  success: { type: String, default: '' },
+  customerEmail: { type: String, default: '' }
 });
 
 const emit = defineEmits(['submit']);
@@ -49,6 +50,8 @@ const mode = ref('DEPOSIT');
 const form = reactive({ iban: '', amount: '' });
 
 const submitAtmTransaction = () => {
+  if (!form.iban || Number(form.amount) <= 0) return;
+
   emit('submit', {
     type: mode.value,
     fromIban: mode.value === 'WITHDRAWAL' ? form.iban : null,

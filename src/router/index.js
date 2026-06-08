@@ -68,7 +68,7 @@ const router = createRouter({
     {
       path: "/atm",
       component: AtmPage,
-      meta: { requiresAuth: true, role: "ROLE_CUSTOMER" },
+      meta: { requiresAuth: false },
     },
     {
       path: "/search",
