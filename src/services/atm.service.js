@@ -7,6 +7,14 @@ function getCookie(name) {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+function getAtmSession() {
+  try {
+    return JSON.parse(localStorage.getItem(ATM_SESSION_KEY));
+  } catch (error) {
+    return null;
+  }
+}
+
 const atmApi = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1',
   withCredentials: true,
@@ -16,7 +24,7 @@ const atmApi = axios.create({
 });
 
 atmApi.interceptors.request.use((config) => {
-  const session = AtmService.getSession();
+  const session = getAtmSession();
 
   if (session?.token) {
     config.headers.Authorization = `Bearer ${session.token}`;
@@ -75,11 +83,7 @@ class AtmService {
 
   // Returns the current ATM-only session, if one exists.
   getSession() {
-    try {
-      return JSON.parse(localStorage.getItem(ATM_SESSION_KEY));
-    } catch (error) {
-      return null;
-    }
+    return getAtmSession();
   }
 
   // Clears only the ATM session and leaves the main banking login untouched.
