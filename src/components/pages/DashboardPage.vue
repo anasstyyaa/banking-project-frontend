@@ -7,6 +7,15 @@
       </header>
 
       <AppText v-if="error" size="sm" class="error">{{ error }}</AppText>
+
+      <div v-if="isPendingApproval" class="pending-banner">
+        <AppText tag="h2" size="lg" weight="bold">Welcome to Inholland Banking 👋</AppText>
+        <AppText size="sm" muted>
+          Your registration is currently under review by one of our employees. You'll get full access to
+          your accounts as soon as it's approved — this usually takes 1–2 business days.
+        </AppText>
+      </div>
+
       <AccountSummary :accounts="accounts" />
       <TransactionList :transactions="transactions.slice(0, 5)" :account-ibans="accountIbans" />
     </div>
@@ -40,6 +49,11 @@ const loadDashboard = async () => {
   }
 };
 
+const isPendingApproval = computed(() => {
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  return user && user.isApproved === false;
+});
+
 onMounted(loadDashboard);
 </script>
 
@@ -60,6 +74,16 @@ onMounted(loadDashboard);
   color: var(--color-error);
   background: rgba(211, 47, 47, 0.08);
   padding: var(--space-sm);
+  border-radius: var(--border-radius);
+}
+
+.pending-banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-lg);
+  background: rgba(255, 193, 7, 0.08);
+  border: 1px solid rgba(255, 193, 7, 0.3);
   border-radius: var(--border-radius);
 }
 </style>

@@ -84,7 +84,8 @@ const handleLogin = async () => {
       const userData = {
         token: response.data.token,
         email: response.data.email,
-        role: response.data.role
+        role: response.data.role,
+        isApproved: response.data.isApproved
       };
       
       localStorage.setItem('user', JSON.stringify(userData)); 
@@ -108,11 +109,8 @@ const handleLogin = async () => {
     const statusCode = err.response?.status;
     const backendMessage = err.response?.data?.message || err.response?.data?.reason || '';
 
-    if (backendMessage.includes('ACCOUNT_PENDING_APPROVAL')) {
-      logPendingAttempt(loginData.email);
-      router.push('/pending-approval');
-    } 
-    else if (statusCode === 403) {
+    
+    if (statusCode === 403) {
       errors.email = "Security Block: Check backend CORS or CSRF token setups.";
     } else if (statusCode === 401) {
       errors.email = "Invalid email address or password configuration.";
@@ -124,9 +122,6 @@ const handleLogin = async () => {
   }
 };
 
-const logPendingAttempt = (email) => {
-  console.warn(`[Auth-Gate] User identity context '${email}' redirected to pending view pipeline.`);
-};
 </script>
 
 <style scoped>
