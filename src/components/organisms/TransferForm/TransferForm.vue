@@ -86,7 +86,7 @@ const form = reactive({
   amount: ''
 });
 
-const ibanPattern = /^NL\d{2}INHO\d{9}$/;
+const ibanPattern = /^NL\d{2}INHO\d{10}$/;
 
 const isCheckingAccount = (account) => {
   return String(account.type).toUpperCase() === 'CHECKING';
