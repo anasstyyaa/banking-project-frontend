@@ -60,8 +60,8 @@ const search = async (name) => {
   error.value = '';
   searched.value = true;
   try {
-    const response = await AccountService.searchByName(name);
-    results.value = response.data;
+    const response = await AccountService.search(name, { page: 0, size: 10 });
+    results.value = response.data.content ?? response.data;
   } catch (err) {
     error.value = err.response?.data?.message || 'Search failed.';
   } finally {
@@ -69,14 +69,10 @@ const search = async (name) => {
   }
 };
 
-const copyIban = async (iban) => {
-  try {
-    await navigator.clipboard.writeText(iban);
-    copiedIban.value = iban;
-    setTimeout(() => (copiedIban.value = ''), 2000);
-  } catch {
-    error.value = 'Unable to copy IBAN. Please try again.';
-  }
+const copyIban = (iban) => {
+  navigator.clipboard.writeText(iban);
+  copiedIban.value = iban;
+  setTimeout(() => (copiedIban.value = ''), 2000);
 };
 </script>
 

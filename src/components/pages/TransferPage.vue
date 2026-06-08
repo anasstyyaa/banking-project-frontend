@@ -33,7 +33,7 @@ const success = ref('');
 const loadAccounts = async () => {
   try {
     const response = await AccountService.getAccounts();
-    accounts.value = response.data;
+    accounts.value = response.data.content ?? response.data;
   } catch (err) {
     error.value = err.response?.data?.message || 'Accounts could not be loaded.';
   }
@@ -44,6 +44,10 @@ const submitTransfer = async (payload) => {
   error.value = '';
   success.value = '';
   try {
+    if (!payload.fromIban || !payload.toIban || !payload.amount) {
+      error.value = 'Select both accounts and enter an amount.';
+      return;
+    }
     await TransactionService.createTransaction(payload);
     success.value = 'Transfer completed.';
     await loadAccounts();

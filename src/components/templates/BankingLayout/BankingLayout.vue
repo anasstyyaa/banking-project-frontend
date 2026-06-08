@@ -12,6 +12,7 @@
         <NavItem icon="Send" :active="isActive('/transfer')" @navigate="goTo('/transfer')">Transfer</NavItem>
         <NavItem icon="Landmark" :active="isActive('/atm')" @navigate="goTo('/atm')">ATM</NavItem>
         <NavItem icon="Search" :active="isActive('/search')" @navigate="goTo('/search')">Find Account</NavItem>
+        <NavItem icon="User" :active="isActive('/profile')" @navigate="goTo('/profile')">Profile</NavItem>
       </nav>
 
       <AppButton variant="ghost" class="logout-button" @click="logout">
