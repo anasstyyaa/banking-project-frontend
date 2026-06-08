@@ -11,9 +11,9 @@
     </div>
 
     <label class="field">
-      <AppText size="sm" weight="bold">Account</AppText>
+      <AppText size="sm" weight="bold">Checking account</AppText>
       <select v-model="form.iban" class="select">
-        <option value="">Select account</option>
+        <option value="">Select checking account</option>
         <option v-for="account in accounts" :key="account.iban" :value="account.iban">
           {{ account.type }} - {{ account.iban }}
         </option>
