@@ -212,7 +212,7 @@ const fetchAccountsLedger = async () => {
   }
 };
 
-const filteredAccounts = computed(() => allAccountsList.value);
+
 
 const filteredAccounts = computed(() => {
   const term = searchQuery.value.toLowerCase().trim();
