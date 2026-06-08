@@ -7,9 +7,14 @@
           <AppText size="sm" muted>Log in with your customer credentials to deposit or withdraw money</AppText>
         </div>
 
-        <AppButton v-if="atmSession" variant="ghost" size="sm" @click="exitAtm">
-          Exit ATM
-        </AppButton>
+        <div class="header-actions">
+          <AppButton variant="ghost" size="sm" @click="goBackToMainApp">
+            Main app
+          </AppButton>
+          <AppButton v-if="atmSession" variant="ghost" size="sm" @click="exitAtm">
+            Exit ATM
+          </AppButton>
+        </div>
       </header>
 
       <form v-if="!atmSession" class="atm-login" @submit.prevent="loginToAtm">
@@ -48,12 +53,14 @@
 
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import AtmService from '@/services/atm.service';
 import AtmPanel from '@/components/organisms/AtmPanel/AtmPanel.vue';
 import AppButton from '@/components/atoms/Button/Button.vue';
 import AppText from '@/components/atoms/Text/Text.vue';
 import FormField from '@/components/molecules/FormField/FormField.vue';
 
+const router = useRouter();
 const accounts = ref([]);
 const loading = ref(false);
 const error = ref('');
@@ -90,7 +97,12 @@ const loginToAtm = async () => {
 const loadAccounts = async () => {
   try {
     const response = await AtmService.getAccounts();
-    accounts.value = response.data.content ?? response.data;
+    const visibleAccounts = response.data.content ?? response.data;
+    accounts.value = visibleAccounts.filter((account) => account.type === 'CHECKING');
+
+    if (accounts.value.length === 0) {
+      error.value = 'No checking account is available for ATM transactions.';
+    }
   } catch (err) {
     error.value = err.response?.data?.message || 'Accounts could not be loaded.';
   }
@@ -118,6 +130,17 @@ const exitAtm = () => {
   success.value = '';
   error.value = '';
   loginForm.password = '';
+};
+
+const goBackToMainApp = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  if (!user) {
+    router.push('/login');
+    return;
+  }
+
+  router.push(user.role === 'ROLE_EMPLOYEE' ? '/employee/registrations' : '/dashboard');
 };
 
 onMounted(() => {
@@ -149,6 +172,12 @@ onMounted(() => {
   gap: var(--space-xs);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
 .atm-login {
   background: var(--color-white);
   border: 1px solid var(--color-primary);
@@ -177,6 +206,10 @@ onMounted(() => {
 
   .page-header {
     grid-template-columns: 1fr;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
   }
 }
 </style>
