@@ -37,7 +37,7 @@
       />
 
       <FormField
-        label="Daily transfer limit"
+        label="Daily transaction limit"
         type="number"
         v-model="form.dailyLimit"
         placeholder="1000.00"

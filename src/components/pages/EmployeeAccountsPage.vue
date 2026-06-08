@@ -143,7 +143,7 @@
           </label>
 
           <label class="field">
-            <AppText size="sm" weight="bold">Daily transfer limit</AppText>
+            <AppText size="sm" weight="bold">Daily transaction limit</AppText>
             <input v-model="limitForm.dailyLimit" class="limit-input" type="number" step="0.01" min="0.01" />
           </label>
 
@@ -211,8 +211,6 @@ const fetchAccountsLedger = async () => {
     console.error("Ledger acquisition pipeline block:", err);
   }
 };
-
-
 
 const filteredAccounts = computed(() => {
   const term = searchQuery.value.toLowerCase().trim();
