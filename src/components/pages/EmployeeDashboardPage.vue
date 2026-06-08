@@ -61,7 +61,7 @@
           </div>
 
           <AppText size="sm" muted>
-            Optionally set initial account limits. Leave blank to use the default values (absolute: -500, daily: 1000).
+            Optionally set initial account limits. Leave blank to use the default values (absolute: -500, daily transaction: 1000).
           </AppText>
 
           <label class="field">
@@ -69,7 +69,7 @@
             <input v-model="approvalLimitForm.absoluteLimit" class="limit-input" type="number" step="0.01" placeholder="-500.00" />
           </label>
           <label class="field">
-            <AppText size="sm" weight="bold">Daily transfer limit (optional)</AppText>
+            <AppText size="sm" weight="bold">Daily transaction limit (optional)</AppText>
             <input v-model="approvalLimitForm.dailyLimit" class="limit-input" type="number" step="0.01" min="0.01" placeholder="1000.00" />
           </label>
 
