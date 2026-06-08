@@ -339,8 +339,8 @@ watch(customerPage, () => {
 onMounted(async () => {
   await Promise.all([fetchAllTransactions(), fetchAccounts()]);
   try {
-    const res = await EmployeeService.getActiveCustomers();
-    allCustomers.value = res.data;
+    const res = await EmployeeService.getRegistrations('APPROVED', { page: 0, size: 100 });
+    allCustomers.value = res.data.content;
   } catch (err) {
     console.error('Failed to load customers:', err);
   }

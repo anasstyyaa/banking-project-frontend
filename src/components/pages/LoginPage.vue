@@ -89,6 +89,12 @@ const handleLogin = async () => {
       
       localStorage.setItem('user', JSON.stringify(userData)); 
 
+      try {
+        await api.get('/auth/csrf');
+      } catch (csrfErr) {
+        console.warn("Failed to refresh CSRF token after login:", csrfErr);
+      }
+
       if (userData.role === 'ROLE_EMPLOYEE') {
         router.push('/employee/dashboard');
       } else {
@@ -102,7 +108,6 @@ const handleLogin = async () => {
     const statusCode = err.response?.status;
     const backendMessage = err.response?.data?.message || err.response?.data?.reason || '';
 
-    // If the backend explicitly says the account is pending, route them out.
     if (backendMessage.includes('ACCOUNT_PENDING_APPROVAL')) {
       logPendingAttempt(loginData.email);
       router.push('/pending-approval');
