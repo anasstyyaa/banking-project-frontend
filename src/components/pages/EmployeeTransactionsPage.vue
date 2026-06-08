@@ -89,6 +89,8 @@
         </div>
       </div>
 
+      <TransactionFilters @apply="applyFilters" @reset="resetFilters" />
+
       <!-- Transactions Table -->
       <div class="table-section" :key="activeTab + selectedCustomer?.id">
         <div class="table-card-wrapper">
@@ -163,6 +165,7 @@ import AppText from '@/components/atoms/Text/Text.vue';
 import AppBadge from '@/components/atoms/Badge/Badge.vue';
 import AppIcon from '@/components/atoms/AppIcon/AppIcon.vue';
 import AppButton from '@/components/atoms/Button/Button.vue';
+import TransactionFilters from '@/components/organisms/TransactionFilters/TransactionFilters.vue';
 import AuthService from '@/services/auth.service';
 import TransactionService from '@/services/transaction.service';
 import EmployeeService from '@/services/employee.service';
@@ -180,6 +183,7 @@ const allTotalPages = ref(1);
 const customerTotalPages = ref(1);
 const selectedCustomer = ref(null);
 const customerSearchQuery = ref('');
+const activeFilters = ref({});
 const isSubmittingTransfer = ref(false);
 const transferError = ref('');
 const transferSuccess = ref('');
@@ -227,7 +231,11 @@ const destinationAccounts = computed(() =>
 
 const fetchAllTransactions = async () => {
   try {
-    const res = await TransactionService.getTransactions({ page: allPage.value - 1, size: ITEMS_PER_PAGE });
+    const res = await TransactionService.getTransactions({
+      ...activeFilters.value,
+      page: allPage.value - 1,
+      size: ITEMS_PER_PAGE
+    });
     allTransactions.value = res.data.content ?? res.data;
     allTotalRows.value = res.data.totalElements ?? allTransactions.value.length;
     allTotalPages.value = res.data.totalPages ?? 1;
@@ -238,7 +246,12 @@ const fetchAllTransactions = async () => {
 
 const fetchCustomerTransactions = async (userId) => {
   try {
-    const res = await TransactionService.getTransactions({ userId, page: customerPage.value - 1, size: ITEMS_PER_PAGE });
+    const res = await TransactionService.getTransactions({
+      ...activeFilters.value,
+      userId,
+      page: customerPage.value - 1,
+      size: ITEMS_PER_PAGE
+    });
     customerTransactions.value = res.data.content ?? res.data;
     customerTotalRows.value = res.data.totalElements ?? customerTransactions.value.length;
     customerTotalPages.value = res.data.totalPages ?? 1;
@@ -276,7 +289,11 @@ const submitEmployeeTransfer = async () => {
     transferSuccess.value = 'Transfer saved.';
     transferForm.value = { fromIban: '', toIban: '', amount: '' };
     allPage.value = 1;
-    await Promise.all([fetchAllTransactions(), fetchAccounts()]);
+    customerPage.value = 1;
+    const refreshTransactions = activeTab.value === 'customer' && selectedCustomer.value
+      ? fetchCustomerTransactions(selectedCustomer.value.id)
+      : fetchAllTransactions();
+    await Promise.all([refreshTransactions, fetchAccounts()]);
   } catch (err) {
     transferError.value = err.response?.data?.message || 'Transfer failed.';
   } finally {
@@ -301,6 +318,51 @@ const clearCustomer = () => {
 
 const switchTab = (tab) => {
   activeTab.value = tab;
+  if (tab === 'all') {
+    fetchAllTransactions();
+  } else if (selectedCustomer.value) {
+    fetchCustomerTransactions(selectedCustomer.value.id);
+  }
+};
+
+const applyFilters = async (filters = {}) => {
+  activeFilters.value = filters;
+  allPage.value = 1;
+  customerPage.value = 1;
+
+  if (activeTab.value === 'customer' && selectedCustomer.value) {
+    await fetchCustomerTransactions(selectedCustomer.value.id);
+    return;
+  }
+
+  if (activeTab.value === 'customer') {
+    customerTransactions.value = [];
+    customerTotalRows.value = 0;
+    customerTotalPages.value = 1;
+    return;
+  }
+
+  await fetchAllTransactions();
+};
+
+const resetFilters = async () => {
+  activeFilters.value = {};
+  allPage.value = 1;
+  customerPage.value = 1;
+
+  if (activeTab.value === 'customer' && selectedCustomer.value) {
+    await fetchCustomerTransactions(selectedCustomer.value.id);
+    return;
+  }
+
+  if (activeTab.value === 'customer') {
+    customerTransactions.value = [];
+    customerTotalRows.value = 0;
+    customerTotalPages.value = 1;
+    return;
+  }
+
+  await fetchAllTransactions();
 };
 
 const formatDate = (timestamp) => {
