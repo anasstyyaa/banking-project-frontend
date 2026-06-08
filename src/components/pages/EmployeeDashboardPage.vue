@@ -1,5 +1,5 @@
 <template>
-  <DashboardLayout>
+  <DashboardLayout @logout="handleLogout">
     <template #sidebar>
       <AppSidebar current-route="registrations" @logout="handleLogout" />
     </template>
