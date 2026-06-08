@@ -199,7 +199,11 @@ const currentPage = ref(1);
 
 const fetchAccountsLedger = async () => {
   try {
-    const res = await EmployeeService.getAllSystemAccounts({ page: currentPage.value - 1, size: ITEMS_PER_PAGE }); 
+    const res = await EmployeeService.getAllSystemAccounts({ 
+      page: currentPage.value - 1, 
+      size: ITEMS_PER_PAGE,
+      search: searchQuery.value || undefined
+    });
     allAccountsList.value = res.data.content ?? res.data;
     totalRows.value = res.data.totalElements ?? allAccountsList.value.length;
     totalPages.value = res.data.totalPages ?? 1;
@@ -207,6 +211,8 @@ const fetchAccountsLedger = async () => {
     console.error("Ledger acquisition pipeline block:", err);
   }
 };
+
+const filteredAccounts = computed(() => allAccountsList.value);
 
 const filteredAccounts = computed(() => {
   const term = searchQuery.value.toLowerCase().trim();
@@ -312,6 +318,7 @@ const handleLogout = async () => {
 
 watch(searchQuery, () => {
   currentPage.value = 1;
+  fetchAccountsLedger();
 });
 
 watch(currentPage, fetchAccountsLedger);
