@@ -1,11 +1,10 @@
 import axios from 'axios';
+import { getStoredCsrfToken, storeCsrfToken } from '@/utils/csrf';
+
 
 const ATM_SESSION_KEY = 'atmSession';
 
-function getCookie(name) {
-  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
-  return match ? decodeURIComponent(match[1]) : null;
-}
+
 
 function getAtmSession() {
   try {
@@ -30,10 +29,8 @@ atmApi.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${session.token}`;
   }
 
-  const csrfToken = getCookie('XSRF-TOKEN');
-  if (csrfToken) {
-    config.headers['X-XSRF-TOKEN'] = csrfToken;
-  }
+  const csrf = getStoredCsrfToken();
+  if (csrf) { config.headers['X-XSRF-TOKEN'] = csrf; }
 
   return config;
 });
@@ -46,14 +43,12 @@ atmApi.interceptors.response.use(
     if (response && response.status === 403 && config && !config._retriedAfterCsrfRefresh) {
       config._retriedAfterCsrfRefresh = true;
       try {
-        await atmApi.get('/auth/csrf');
-        const freshToken = getCookie('XSRF-TOKEN');
-        if (freshToken) {
-          config.headers['X-XSRF-TOKEN'] = freshToken;
-        }
+        const csrfResponse = await atmApi.get('/auth/csrf');
+        storeCsrfToken(csrfResponse.data.token);
+        config.headers['X-XSRF-TOKEN'] = csrfResponse.data.token;
         return atmApi(config);
       } catch (refreshErr) {
-        // Keep the original ATM request error for the caller.
+        // fall through and reject with the original error
       }
     }
 
@@ -77,7 +72,8 @@ class AtmService {
     };
 
     localStorage.setItem(ATM_SESSION_KEY, JSON.stringify(session));
-    await atmApi.get('/auth/csrf');
+    const { data } = await atmApi.get('/auth/csrf');
+    storeCsrfToken(data.token);
     return session;
   }
 
