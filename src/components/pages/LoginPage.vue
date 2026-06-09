@@ -40,6 +40,7 @@ import AuthLayout from '@/components/templates/AuthLayout/AuthLayout.vue';
 import AuthForm from '@/components/organisms/AuthForm/AuthForm.vue';
 import FormField from '@/components/molecules/FormField/FormField.vue';
 import AppText from '@/components/atoms/Text/Text.vue';
+import { storeCsrfToken } from '@/utils/csrf';
 
 import api from '@/api/axios'; 
 
@@ -58,8 +59,9 @@ const errors = reactive({
 
 onMounted(async () => {
   try {
-    await api.get('/auth/csrf'); 
-    console.log("CSRF cookie initialized successfully");
+    const { data } = await api.get('/auth/csrf');
+    storeCsrfToken(data.token);
+    console.log("CSRF token initialized successfully");
   } catch (error) {
     console.error("Failed to initialize security session:", error);
   }
@@ -91,7 +93,8 @@ const handleLogin = async () => {
       localStorage.setItem('user', JSON.stringify(userData)); 
 
       try {
-        await api.get('/auth/csrf');
+        const csrfResponse = await api.get('/auth/csrf');
+        storeCsrfToken(csrfResponse.data.token);
       } catch (csrfErr) {
         console.warn("Failed to refresh CSRF token after login:", csrfErr);
       }
