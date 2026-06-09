@@ -1,13 +1,15 @@
-const CSRF_TOKEN_KEY = 'csrfToken';
+const CSRF_KEY = 'csrf_token';
 
 export function getStoredCsrfToken() {
-  return localStorage.getItem(CSRF_TOKEN_KEY);
+  return localStorage.getItem(CSRF_KEY);
 }
 
 export function storeCsrfToken(token) {
-  if (token) localStorage.setItem(CSRF_TOKEN_KEY, token);
+  if (token) {
+    localStorage.setItem(CSRF_KEY, token);
+  }
 }
 
 export function clearCsrfToken() {
-  localStorage.removeItem(CSRF_TOKEN_KEY);
+  localStorage.removeItem(CSRF_KEY);
 }

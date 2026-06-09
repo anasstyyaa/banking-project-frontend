@@ -93,8 +93,8 @@ const handleLogin = async () => {
       localStorage.setItem('user', JSON.stringify(userData)); 
 
       try {
-        const { data } = await api.get('/auth/csrf');
-        storeCsrfToken(data.token);
+        const csrfResponse = await api.get('/auth/csrf');
+        storeCsrfToken(csrfResponse.data.token);
       } catch (csrfErr) {
         console.warn("Failed to refresh CSRF token after login:", csrfErr);
       }

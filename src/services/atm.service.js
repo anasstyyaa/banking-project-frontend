@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getStoredCsrfToken, storeCsrfToken } from '@/utils/csrf';
 
+
 const ATM_SESSION_KEY = 'atmSession';
 
 
@@ -28,10 +29,8 @@ atmApi.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${session.token}`;
   }
 
-  const csrfToken = getStoredCsrfToken();
-  if (csrfToken) {
-    config.headers['X-XSRF-TOKEN'] = csrfToken;
-  }
+  const csrf = getStoredCsrfToken();
+  if (csrf) { config.headers['X-XSRF-TOKEN'] = csrf; }
 
   return config;
 });
@@ -44,11 +43,9 @@ atmApi.interceptors.response.use(
     if (response && response.status === 403 && config && !config._retriedAfterCsrfRefresh) {
       config._retriedAfterCsrfRefresh = true;
       try {
-        const { data } = await atmApi.get('/auth/csrf');
-        storeCsrfToken(data.token);
-        if (data.token) {
-          config.headers['X-XSRF-TOKEN'] = data.token;
-        }
+        const csrfResponse = await atmApi.get('/auth/csrf');
+        storeCsrfToken(csrfResponse.data.token);
+        config.headers['X-XSRF-TOKEN'] = csrfResponse.data.token;
         return atmApi(config);
       } catch (refreshErr) {
         // fall through and reject with the original error
